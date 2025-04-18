@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rastreador & Exploradores - CryptoPulse</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #0e0e10; color: #f0f0f0; line-height: 1.5; padding: 20px; }
+    
+    header { 
+      background: linear-gradient(90deg, #8b5cf6, #3b82f6, #06b6d4); 
+      padding: 20px; 
+      text-align: center; 
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      position: relative;
+      border-radius: 8px;
+    }
+    header h1 { 
+      font-size: 2.2rem; 
+      font-weight: 600; 
+      color: #ffffff; 
+      letter-spacing: 1px; 
+      animation: titlePulse 2s ease-in-out infinite;
+    }
+
+    .menu-icon {
+      position: absolute;
+      top: 50%;
+      right: 20px;
+      transform: translateY(-50%);
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #ffffff;
+      transition: color 0.2s;
+    }
+    .menu-icon:hover { color: #d1d5db; }
+
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 60px;
+      right: 20px;
+      background: #1f1f23;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      min-width: 200px;
+    }
+    .dropdown a {
+      display: block;
+      padding: 10px 14px;
+      color: #f0f0f0;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .dropdown a:hover {
+      background: #27272a;
+      color: #93c5fd;
+    }
+
+    .wallet-section, .explorer-section {
+      max-width: 1000px;
+      margin: 20px auto;
+    }
+    .wallet-section h2, .explorer-section h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #93c5fd;
+      margin-bottom: 16px;
+    }
+    .wallet-form, .search-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .wallet-form input, .wallet-form select, .search-form input, .search-form select {
+      padding: 10px;
+      font-size: 0.9rem;
+      border: none;
+      border-radius: 8px;
+      background: #1f1f23;
+      color: #f0f0f0;
+      flex: 1;
+    }
+    .wallet-form input:focus, .wallet-form select:focus, .search-form input:focus, .search-form select:focus {
+      outline: none;
+      background: #27272a;
+    }
+    .wallet-form button, .search-form button, .clear-history {
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      background: #3b82f6;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .wallet-form button:hover, .search-form button:hover, .clear-history:hover {
+      background: #2563eb;
+    }
+    .delete-btn, .tokens-btn {
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .delete-btn {
+      background: #ef4444;
+      color: #ffffff;
+    }
+    .delete-btn:hover {
+      background: #dc2626;
+    }
+    .tokens-btn {
+      background: #10b981;
+      color: #ffffff;
+    }
+    .tokens-btn:hover {
+      background: #059669;
+    }
+
+    .error-message, .loading-message {
+      text-align: center;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+    .error-message { background: #ef4444; color: #fff; }
+    .loading-message { background: #3b82f6; color: #fff; }
+
+    .table-container {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1f1f23;
+      border-radius: 8px;
+      overflow: hidden;
+      table-layout: fixed;
+    }
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 0.9rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    th {
+      color: #93c5fd;
+      font-weight: 600;
+      background: #27272a;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    th:hover { background: #333; }
+    tbody {
+      max-height: 200px; /* Aproximadamente 5 linhas */
+      overflow-y: auto;
+      display: block;
+    }
+    tbody tr {
+      border-bottom: 1px solid #2d2d31;
+      transition: background 0.2s;
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
+    tbody tr:hover { background: #27272a; cursor: pointer; }
+    .no-results { text-align: center; padding: 20px; color: #9ca3af; display: table; width: 100%; }
+
+    /* Larguras das colunas */
+    th:nth-child(1), td:nth-child(1) { width: 30%; } /* Endereço */
+    th:nth-child(2), td:nth-child(2) { width: 25%; } /* Blockchain */
+    th:nth-child(3), td:nth-child(3) { width: 25%; } /* Valor Total */
+    th:nth-child(4), td:nth-child(4) { width: 20%; } /* Ação */
+
+    .explorer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .explorer-card {
+      background: #1f1f23;
+      border-radius: 8px;
+      padding: 20px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .explorer-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .explorer-card h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #93c5fd;
+      margin-bottom: 10px;
+    }
+    .explorer-card p {
+      font-size: 0.9rem;
+      color: #d1d5db;
+      margin-bottom: 10px;
+    }
+    .explorer-card a {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .explorer-card a:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      text-align: center;
+      padding: 12px;
+      font-size: 0.8rem;
+      color: #9ca3af;
+      border-top: 1px solid #2d2d31;
+    }
+
+    @keyframes titlePulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.02); opacity: 0.95; }
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 16px; }
+      header h1 { font-size: 1.8rem; }
+      .menu-icon { font-size: 1.2rem; right: 16px; }
+      .dropdown { top: 50px; right: 16px; min-width: 160px; }
+      .dropdown a { font-size: 0.8rem; padding: 8px 12px; }
+      .wallet-form, .search-form { flex-direction: column; }
+      .wallet-form input, .wallet-form select, .search-form input, .search-form select, .wallet-form button, .search-form button { width: 100%; }
+      th, td { font-size: 0.8rem; padding: 8px 10px; }
+      .explorer-card { padding: 16px; }
+      .explorer-card h3 { font-size: 1.1rem; }
+      .explorer-card p { font-size: 0.8rem; }
+      th:nth-child(1), td:nth-child(1) { width: 35%; }
+      th:nth-child(2), td:nth-child(2) { width: 25%; }
+      th:nth-child(3), td:nth-child(3) { width: 20%; }
+      th:nth-child(4), td:nth-child(4) { width: 20%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CryptoPulse - Ferramentas</h1>
+    <span class="menu-icon" onclick="toggleDropdown()">☰</span>
+    <div class="dropdown" id="crypto-links">
+      <a href="index.html">CryptoPulse (Mercado)</a>
+      <a href="portfolio.html">Portfolio Pessoal</a>
+      <a href="tools.html">Rastreador & Exploradores</a>
+      <a href="https://coinmarketcap.com" target="_blank">CoinMarketCap (Dados)</a>
+      <a href="https://www.coingecko.com" target="_blank">CoinGecko (Dados)</a>
+      <a href="https://www.tradingview.com" target="_blank">TradingView (Gráficos)</a>
+      <a href="https://messari.io" target="_blank">Messari (Análise)</a>
+      <a href="https://defillama.com" target="_blank">DefiLlama (DeFi)</a>
+      <a href="https://cryptoquant.com" target="_blank">CryptoQuant (On-Chain)</a>
+      <a href="https://token.unlocks.app" target="_blank">Token Unlocks (Desbloqueios)</a>
+      <a href="https://dune.com" target="_blank">Dune Analytics (On-Chain)</a>
+      <a href="https://lunarcrush.com" target="_blank">LunarCrush (Sentimento)</a>
+      <a href="https://whale-alert.io" target="_blank">Whale Alert (Baleias)</a>
+      <a href="https://www.binance.com" target="_blank">Binance (Exchange)</a>
+      <a href="https://www.coinbase.com" target="_blank">Coinbase (Exchange)</a>
+      <a href="https://www.coindesk.com" target="_blank">CoinDesk (Notícias)</a>
+    </div>
+  </header>
+  <div class="wallet-section">
+    <h2>Rastreador de Carteira</h2>
+    <div id="status-message"></div>
+    <div class="wallet-form">
+      <select id="blockchain">
+        <option value="auto">Automático</option>
+        <option value="ethereum">Ethereum</option>
+        <option value="bsc">Binance Smart Chain</option>
+        <option value="solana">Solana</option>
+      </select>
+      <input type="text" id="wallet-address" placeholder="Endereço da Carteira (ex.: 0x...)">
+      <button onclick="debouncedTrackWallet()">Rastrear</button>
+      <button class="clear-history" onclick="clearWalletHistory()">Limpar Histórico</button>
+    </div>
+    <div class="table-container">
+      <table id="wallet-table">
+        <thead>
+          <tr>
+            <th>Endereço</th>
+            <th>Blockchain</th>
+            <th>Valor Total (BRL)</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="wallet-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="explorer-section">
+    <h2>Exploradores de Blockchain</h2>
+    <div class="search-form">
+      <select id="explorer">
+        <option value="etherscan">Etherscan (Ethereum)</option>
+        <option value="bscscan">BscScan (Binance Smart Chain)</option>
+        <option value="solscan">Solscan (Solana)</option>
+        <option value="polygonscan">Polygonscan (Polygon)</option>
+        <option value="arbiscan">Arbiscan (Arbitrum)</option>
+      </select>
+      <input type="text" id="search-address" placeholder="Endereço ou Hash da Transação">
+      <button onclick="searchExplorer()">Buscar</button>
+    </div>
+    <div class="explorer-grid">
+      <div class="explorer-card">
+        <h3>Etherscan</h3>
+        <p>Explorador para a blockchain Ethereum. Visualize transações, contratos e saldos.</p>
+        <a href="https://etherscan.io" target="_blank">Acessar Etherscan</a>
+      </div>
+      <div class="explorer-card">
+        <h3>BscScan</h3>
+        <p>Explorador para a Binance Smart Chain. Rastreie BNB, tokens BEP-20 e mais.</p>
+        <a href="https://bscscan.com" target="_blank">Acessar BscScan</a>
+      </div>
+      <div class="explorer-card">
+        <h3>Solscan</h3>
+        <p>Explorador para a blockchain Solana. Veja transações, contas e programas.</p>
+        <a href="https://solscan.io" target="_blank">Acessar Solscan</a>
+      </div>
+      <div class="explorer-card">
+        <h3>Polygonscan</h3>
+        <p>Explorador para a rede Polygon. Monitore MATIC e tokens ERC-20.</p>
+        <a href="https://polygonscan.com" target="_blank">Acessar Polygonscan</a>
+      </div>
+      <div class="explorer-card">
+        <h3>Arbiscan</h3>
+        <p>Explorador para a Arbitrum, uma solução de camada 2 para Ethereum.</p>
+        <a href="https://arbiscan.io" target="_blank">Acessar Arbiscan</a>
+      </div>
+    </div>
+  </div>
+  <footer>
+    © 2025 CryptoPulse | Dados: CoinMarketCap, CoinGecko, Etherscan, BscScan, Solscan
+  </footer>
+  <script>
+    const cmcApiKey = "9e0ef985-caf5-43d3-90e0-a73304b5546e";
+    const etherscanApiKey = "D6DM8WTG21IFNBTT337SWZE7B4MWIAIC4Z";
+    const bscscanApiKey = "B5I5TUJB6JV8A8U7X2HPYZEYVKGEKCUXRJ";
+    const wallets = JSON.parse(localStorage.getItem('wallets')) || [];
+    const cacheTTL = 300000; // 5 minutos
+    const historyTTL = 24 * 60 * 60 * 1000; // 24 horas
+    const maxWallets = 5; // Limite de 5 buscas
+    let debounceTimeout;
+
+    function toggleDropdown() {
+      const dropdown = document.getElementById('crypto-links');
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    }
+
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('crypto-links');
+      const icon = document.querySelector('.menu-icon');
+      if (!dropdown.contains(e.target) && !icon.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+
+    function showStatusMessage(message, type = 'error') {
+      const statusDiv = document.getElementById('status-message');
+      statusDiv.innerHTML = `<div class="${type}-message">${message}</div>`;
+      setTimeout(() => statusDiv.innerHTML = '', 5000);
+    }
+
+    function formatDateTime(timestamp) {
+      return new Date(timestamp).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+
+    function clearWalletHistory() {
+      wallets.length = 0;
+      localStorage.setItem('wallets', JSON.stringify(wallets));
+      renderWallets();
+      showStatusMessage('Histórico limpo com sucesso!', 'loading');
+    }
+
+    function deleteWallet(index) {
+      wallets.splice(index, 1);
+      localStorage.setItem('wallets', JSON.stringify(wallets));
+      renderWallets();
+      showStatusMessage('Busca removida com sucesso!', 'loading');
+    }
+
+    function cleanExpiredWallets() {
+      const now = Date.now();
+      const filteredWallets = wallets.filter(wallet => now - wallet.timestamp < historyTTL);
+      if (filteredWallets.length !== wallets.length) {
+        wallets.length = 0;
+        wallets.push(...filteredWallets);
+        localStorage.setItem('wallets', JSON.stringify(wallets));
+        renderWallets();
+      }
+    }
+
+    function getCachedData(key, fetchFn) {
+      const cached = localStorage.getItem(key);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < cacheTTL) {
+          console.log(`Usando cache para ${key}`);
+          return Promise.resolve(data);
+        }
+      }
+      return fetchFn().then(data => {
+        localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
+        return data;
+      }).catch(err => {
+        console.error(`Erro ao buscar ${key}:`, err.message);
+        throw err;
+      });
+    }
+
+    async function getPrice(symbol) {
+      return getCachedData(`price_${symbol}`, async () => {
+        try {
+          const res = await fetch(`https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbol}&convert=BRL`, {
+            headers: { "X-CMC_PRO_API_KEY": cmcApiKey }
+          });
+          if (!res.ok) throw new Error(`Erro na API CoinMarketCap: ${res.status}`);
+          const data = await res.json();
+          if (data.status.error_code !== 0) throw new Error(data.status.error_message);
+          return data.data[symbol].quote.BRL.price;
+        } catch (err) {
+          console.error(`Erro ao obter preço de ${symbol}:`, err.message);
+          return symbol === 'ETH' ? 15000 : symbol === 'BNB' ? 3000 : symbol === 'SOL' ? 800 : 1; // Fallback
+        }
+      });
+    }
+
+    function isValidAddress(address, blockchain) {
+      if (!address) return false;
+      if (blockchain === 'solana' || blockchain === 'auto') {
+        return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address) || /^0x[a-fA-F0-9]{40}$/.test(address);
+      }
+      return /^0x[a-fA-F0-9]{40}$/.test(address);
+    }
+
+    async function detectBlockchain(address) {
+      console.log(`Detectando blockchain para endereço: ${address}`);
+      if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)) {
+        console.log('Formato compatível com Solana');
+        return 'solana';
+      }
+      if (/^0x[a-fA-F0-9]{40}$/.test(address)) {
+        console.log('Formato compatível com Ethereum/BSC');
+        try {
+          const [ethBalance, bscBalance] = await Promise.all([
+            fetch(`https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${etherscanApiKey}`)
+              .then(res => res.json())
+              .then(data => {
+                console.log('Resposta Etherscan:', data);
+                return data.status === "1" && data.result !== "0";
+              })
+              .catch(err => {
+                console.error('Erro Etherscan:', err.message);
+                return false;
+              }),
+            fetch(`https://api.bscscan.com/api?module=account&action=balance&address=${address}&tag=latest&apikey=${bscscanApiKey}`)
+              .then(res => res.json())
+              .then(data => {
+                console.log('Resposta BscScan:', data);
+                return data.status === "1" && data.result !== "0";
+              })
+              .catch(err => {
+                console.error('Erro BscScan:', err.message);
+                return false;
+              })
+          ]);
+          if (ethBalance && bscBalance) {
+            console.log('Endereço ativo em Ethereum e BSC, priorizando Ethereum');
+            return 'ethereum';
+          }
+          if (ethBalance) {
+            console.log('Endereço ativo em Ethereum');
+            return 'ethereum';
+          }
+          if (bscBalance) {
+            console.log('Endereço ativo em BSC');
+            return 'bsc';
+          }
+        } catch (err) {
+          console.error('Erro ao detectar blockchain:', err.message);
+        }
+      }
+      throw new Error('Nenhuma blockchain válida encontrada para o endereço');
+    }
+
+    async function getTokens(address, blockchain) {
+      const tokens = [];
+      let nativeBalance = 0, nativeSymbol, nativePrice;
+
+      if (blockchain === 'ethereum') {
+        nativeSymbol = 'ETH';
+        const balanceRes = await fetch(`https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${etherscanApiKey}`);
+        const balanceData = await balanceRes.json();
+        if (balanceData.status !== "1") throw new Error(balanceData.message || 'Erro na API Etherscan');
+        nativeBalance = balanceData.result / 1e18;
+        nativePrice = await getPrice('ETH');
+        const tokenRes = await fetch(`https://api.etherscan.io/api?module=account&action=tokenlist&address=${address}&apikey=${etherscanApiKey}`);
+        const tokenData = await tokenRes.json();
+        if (tokenData.status === "1") {
+          for (const token of tokenData.result) {
+            const balance = token.balance / Math.pow(10, token.decimals);
+            const price = await getPrice(token.symbol).catch(() => 1); // Fallback se não houver preço
+            tokens.push({
+              name: token.name,
+              symbol: token.symbol,
+              balance,
+              valueBRL: (balance * price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            });
+          }
+        }
+      } else if (blockchain === 'bsc') {
+        nativeSymbol = 'BNB';
+        const balanceRes = await fetch(`https://api.bscscan.com/api?module=account&action=balance&address=${address}&tag=latest&apikey=${bscscanApiKey}`);
+        const balanceData = await balanceRes.json();
+        if (balanceData.status !== "1") throw new Error(balanceData.message || 'Erro na API BscScan');
+        nativeBalance = balanceData.result / 1e18;
+        nativePrice = await getPrice('BNB');
+        const tokenRes = await fetch(`https://api.bscscan.com/api?module=account&action=tokenlist&address=${address}&apikey=${bscscanApiKey}`);
+        const tokenData = await tokenRes.json();
+        if (tokenData.status === "1") {
+          for (const token of tokenData.result) {
+            const balance = token.balance / Math.pow(10, token.decimals);
+            const price = await getPrice(token.symbol).catch(() => 1);
+            tokens.push({
+              name: token.name,
+              symbol: token.symbol,
+              balance,
+              valueBRL: (balance * price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            });
+          }
+        }
+      } else if (blockchain === 'solana') {
+        nativeSymbol = 'SOL';
+        const { Connection, PublicKey } = solanaWeb3;
+        const connection = new Connection('https://api.mainnet-beta.solana.com');
+        let publicKey;
+        try {
+          publicKey = new PublicKey(address);
+        } catch (err) {
+          throw new Error('Endereço Solana inválido');
+        }
+        nativeBalance = await connection.getBalance(publicKey).then(lamports => lamports / 1e9);
+        nativePrice = await getPrice('SOL');
+        // Tokens SPL não suportados diretamente pela API gratuita; apenas SOL por enquanto
+      }
+
+      tokens.unshift({
+        name: blockchain === 'ethereum' ? 'Ethereum' : blockchain === 'bsc' ? 'Binance Coin' : 'Solana',
+        symbol: nativeSymbol,
+        balance: nativeBalance,
+        valueBRL: (nativeBalance * nativePrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      });
+
+      const totalValueBRL = tokens.reduce((sum, token) => {
+        const value = parseFloat(token.valueBRL.replace(/[^\d,.]/g, '').replace(',', '.'));
+        return sum + value;
+      }, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      return { tokens, totalValueBRL };
+    }
+
+    async function trackWallet() {
+      const blockchainInput = document.getElementById('blockchain').value;
+      const address = document.getElementById('wallet-address').value.trim();
+      showStatusMessage('Buscando...', 'loading');
+
+      if (!isValidAddress(address, blockchainInput)) {
+        showStatusMessage('Endereço inválido.', 'error');
+        return;
+      }
+
+      let blockchain = blockchainInput;
+      if (blockchain === 'auto') {
+        try {
+          blockchain = await detectBlockchain(address);
+          console.log(`Blockchain detectada: ${blockchain}`);
+        } catch (err) {
+          showStatusMessage(err.message, 'error');
+          return;
+        }
+      }
+
+      try {
+        const { totalValueBRL } = await getTokens(address, blockchain);
+        const timestamp = Date.now();
+        wallets.unshift({ address, blockchain, totalValueBRL, timestamp });
+        if (wallets.length > maxWallets) wallets.pop();
+        localStorage.setItem('wallets', JSON.stringify(wallets));
+        cleanExpiredWallets();
+        renderWallets();
+        showStatusMessage('Carteira rastreada com sucesso!', 'loading');
+      } catch (err) {
+        console.error('Erro ao rastrear carteira:', err.message);
+        showStatusMessage(`Erro: ${err.message}`, 'error');
+      }
+    }
+
+    function debouncedTrackWallet() {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(trackWallet, 300);
+    }
+
+    function renderWallets() {
+      const tbody = document.getElementById('wallet-table-body');
+      tbody.innerHTML = '';
+      if (wallets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="no-results">Nenhuma carteira rastreada.</td></tr>';
+        return;
+      }
+      wallets.forEach((wallet, index) => {
+        tbody.innerHTML += `
+          <tr>
+            <td><a href="${wallet.blockchain === 'ethereum' ? 'https://etherscan.io/address/' : wallet.blockchain === 'bsc' ? 'https://bscscan.com/address/' : 'https://solscan.io/account/'}${wallet.address}" target="_blank">${wallet.address.slice(0, 8)}...</a></td>
+            <td>${wallet.blockchain.charAt(0).toUpperCase() + wallet.blockchain.slice(1)}</td>
+            <td>${wallet.totalValueBRL}</td>
+            <td>
+              <button class="tokens-btn" onclick="window.location.href='tokens.html?address=${wallet.address}&blockchain=${wallet.blockchain}'">Ver Tokens</button>
+              <button class="delete-btn" onclick="deleteWallet(${index})">Apagar</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function searchExplorer() {
+      const explorer = document.getElementById('explorer').value;
+      const query = document.getElementById('search-address').value.trim();
+      if (!query) {
+        showStatusMessage('Por favor, insira um endereço ou hash de transação.', 'error');
+        return;
+      }
+      let url;
+      if (explorer === 'etherscan') {
+        url = query.startsWith('0x') && query.length === 66 ? `https://etherscan.io/tx/${query}` : `https://etherscan.io/address/${query}`;
+      } else if (explorer === 'bscscan') {
+        url = query.startsWith('0x') && query.length === 66 ? `https://bscscan.com/tx/${query}` : `https://bscscan.com/address/${query}`;
+      } else if (explorer === 'solscan') {
+        url = `https://solscan.io/account/${query}`;
+      } else if (explorer === 'polygonscan') {
+        url = query.startsWith('0x') && query.length === 66 ? `https://polygonscan.com/tx/${query}` : `https://polygonscan.com/address/${query}`;
+      } else if (explorer === 'arbiscan') {
+        url = query.startsWith('0x') && query.length === 66 ? `https://arbiscan.io/tx/${query}` : `https://arbiscan.io/address/${query}`;
+      }
+      window.open(url, '_blank');
+    }
+
+    cleanExpiredWallets();
+    renderWallets();
+  </script>
+</body>
+</html>

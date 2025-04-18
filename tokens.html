@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tokens da Carteira - CryptoPulse</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #0e0e10; color: #f0f0f0; line-height: 1.5; padding: 20px; }
+    
+    header { 
+      background: linear-gradient(90deg, #8b5cf6, #3b82f6, #06b6d4); 
+      padding: 20px; 
+      text-align: center; 
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      position: relative;
+      border-radius: 8px;
+    }
+    header h1 { 
+      font-size: 2.2rem; 
+      font-weight: 600; 
+      color: #ffffff; 
+      letter-spacing: 1px; 
+      animation: titlePulse 2s ease-in-out infinite;
+    }
+
+    .menu-icon {
+      position: absolute;
+      top: 50%;
+      right: 20px;
+      transform: translateY(-50%);
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #ffffff;
+      transition: color 0.2s;
+    }
+    .menu-icon:hover { color: #d1d5db; }
+
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 60px;
+      right: 20px;
+      background: #1f1f23;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      min-width: 200px;
+    }
+    .dropdown a {
+      display: block;
+      padding: 10px 14px;
+      color: #f0f0f0;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .dropdown a:hover {
+      background: #27272a;
+      color: #93c5fd;
+    }
+
+    .token-section {
+      max-width: 1000px;
+      margin: 20px auto;
+    }
+    .token-section h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #93c5fd;
+      margin-bottom: 16px;
+    }
+
+    .error-message, .loading-message {
+      text-align: center;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+    .error-message { background: #ef4444; color: #fff; }
+    .loading-message { background: #3b82f6; color: #fff; }
+
+    .table-container {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1f1f23;
+      border-radius: 8px;
+      overflow: hidden;
+      table-layout: fixed;
+    }
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 0.9rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    th {
+      color: #93c5fd;
+      font-weight: 600;
+      background: #27272a;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    th:hover { background: #333; }
+    tbody {
+      max-height: 300px; /* Aproximadamente 7-8 linhas */
+      overflow-y: auto;
+      display: block;
+    }
+    tbody tr {
+      border-bottom: 1px solid #2d2d31;
+      transition: background 0.2s;
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
+    tbody tr:hover { background: #27272a; cursor: pointer; }
+    .no-results { text-align: center; padding: 20px; color: #9ca3af; display: table; width: 100%; }
+
+    /* Larguras das colunas */
+    th:nth-child(1), td:nth-child(1) { width: 25%; } /* Token */
+    th:nth-child(2), td:nth-child(2) { width: 15%; } /* Saldo */
+    th:nth-child(3), td:nth-child(3) { width: 15%; } /* Valor (BRL) */
+    th:nth-child(4), td:nth-child(4) { width: 25%; } /* Última Transação */
+    th:nth-child(5), td:nth-child(5) { width: 20%; } /* Horário */
+
+    footer {
+      text-align: center;
+      padding: 12px;
+      font-size: 0.8rem;
+      color: #9ca3af;
+      border-top: 1px solid #2d2d31;
+    }
+
+    @keyframes titlePulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.02); opacity: 0.95; }
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 16px; }
+      header h1 { font-size: 1.8rem; }
+      .menu-icon { font-size: 1.2rem; right: 16px; }
+      .dropdown { top: 50px; right: 16px; min-width: 160px; }
+      .dropdown a { font-size: 0.8rem; padding: 8px 12px; }
+      th, td { font-size: 0.8rem; padding: 8px 10px; }
+      th:nth-child(1), td:nth-child(1) { width: 30%; }
+      th:nth-child(2), td:nth-child(2) { width: 15%; }
+      th:nth-child(3), td:nth-child(3) { width: 15%; }
+      th:nth-child(4), td:nth-child(4) { width: 20%; }
+      th:nth-child(5), td:nth-child(5) { width: 20%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CryptoPulse - Tokens da Carteira</h1>
+    <span class="menu-icon" onclick="toggleDropdown()">☰</span>
+    <div class="dropdown" id="crypto-links">
+      <a href="index.html">CryptoPulse (Mercado)</a>
+      <a href="portfolio.html">Portfolio Pessoal</a>
+      <a href="tools.html">Rastreador & Exploradores</a>
+      <a href="https://coinmarketcap.com" target="_blank">CoinMarketCap (Dados)</a>
+      <a href="https://www.coingecko.com" target="_blank">CoinGecko (Dados)</a>
+      <a href="https://www.tradingview.com" target="_blank">TradingView (Gráficos)</a>
+      <a href="https://messari.io" target="_blank">Messari (Análise)</a>
+      <a href="https://defillama.com" target="_blank">DefiLlama (DeFi)</a>
+      <a href="https://cryptoquant.com" target="_blank">CryptoQuant (On-Chain)</a>
+      <a href="https://token.unlocks.app" target="_blank">Token Unlocks (Desbloqueios)</a>
+      <a href="https://dune.com" target="_blank">Dune Analytics (On-Chain)</a>
+      <a href="https://lunarcrush.com" target="_blank">LunarCrush (Sentimento)</a>
+      <a href="https://whale-alert.io" target="_blank">Whale Alert (Baleias)</a>
+      <a href="https://www.binance.com" target="_blank">Binance (Exchange)</a>
+      <a href="https://www.coinbase.com" target="_blank">Coinbase (Exchange)</a>
+      <a href="https://www.coindesk.com" target="_blank">CoinDesk (Notícias)</a>
+    </div>
+  </header>
+  <div class="token-section">
+    <h2>Tokens da Carteira</h2>
+    <div id="status-message"></div>
+    <div class="table-container">
+      <table id="token-table">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Saldo</th>
+            <th>Valor (BRL)</th>
+            <th>Última Transação</th>
+            <th>Horário</th>
+          </tr>
+        </thead>
+        <tbody id="token-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <footer>
+    © 2025 CryptoPulse | Dados: CoinMarketCap, CoinGecko, Etherscan, BscScan, Solscan
+  </footer>
+  <script>
+    const cmcApiKey = "9e0ef985-caf5-43d3-90e0-a73304b5546e";
+    const etherscanApiKey = "D6DM8WTG21IFNBTT337SWZE7B4MWIAIC4Z";
+    const bscscanApiKey = "B5I5TUJB6JV8A8U7X2HPYZEYVKGEKCUXRJ";
+    const cacheTTL = 300000; // 5 minutos
+
+    function toggleDropdown() {
+      const dropdown = document.getElementById('crypto-links');
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    }
+
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('crypto-links');
+      const icon = document.querySelector('.menu-icon');
+      if (!dropdown.contains(e.target) && !icon.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+
+    function showStatusMessage(message, type = 'error') {
+      const statusDiv = document.getElementById('status-message');
+      statusDiv.innerHTML = `<div class="${type}-message">${message}</div>`;
+      setTimeout(() => statusDiv.innerHTML = '', 5000);
+    }
+
+    function formatDateTime(timestamp) {
+      return new Date(timestamp * 1000).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second RISADA: '2-digit'
+      });
+    }
+
+    function getCachedData(key, fetchFn) {
+      const cached = localStorage.getItem(key);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < cacheTTL) {
+          console.log(`Usando cache para ${key}`);
+          return Promise.resolve(data);
+        }
+      }
+      return fetchFn().then(data => {
+        localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
+        return data;
+      }).catch(err => {
+        console.error(`Erro ao buscar ${key}:`, err.message);
+        throw err;
+      });
+    }
+
+    async function getPrice(symbol) {
+      return getCachedData(`price_${symbol}`, async () => {
+        try {
+          const res = await fetch(`https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbol}&convert=BRL`, {
+            headers: { "X-CMC_PRO_API_KEY": cmcApiKey }
+          });
+          if (!res.ok) throw new Error(`Erro na API CoinMarketCap: ${res.status}`);
+          const data = await res.json();
+          if (data.status.error_code !== 0) throw new Error(data.status.error_message);
+          return data.data[symbol].quote.BRL.price;
+        } catch (err) {
+          console.error(`Erro ao obter preço de ${symbol}:`, err.message);
+          return symbol === 'ETH' ? 15000 : symbol === 'BNB' ? 3000 : symbol === 'SOL' ? 800 : 1; // Fallback
+        }
+      });
+    }
+
+    async function fetchTokens(address, blockchain) {
+      const tokens = [];
+      let nativeBalance = 0, nativeSymbol, nativePrice, lastTx = 'N/A', lastTxTime = 0;
+
+      if (blockchain === 'ethereum') {
+        nativeSymbol = 'ETH';
+        const balanceRes = await fetch(`https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${etherscanApiKey}`);
+        const balanceData = await balanceRes.json();
+        if (balanceData.status !== "1") throw new Error(balanceData.message || 'Erro na API Etherscan');
+        nativeBalance = balanceData.result / 1e18;
+        nativePrice = await getPrice('ETH');
+        const txRes = await fetch(`https://api.etherscan.io/api?module=account&action=txlist&address=${address}&sort=desc&apikey=${etherscanApiKey}`);
+        const txData = await txRes.json();
+        if (txData.status === "1" && txData.result.length > 0) {
+          lastTx = `<a href="https://etherscan.io/tx/${txData.result[0].hash}" target="_blank">${txData.result[0].hash.slice(0, 8)}...</a>`;
+          lastTxTime = txData.result[0].timeStamp;
+        }
+        const tokenRes = await fetch(`https://api.etherscan.io/api?module=account&action=tokenlist&address=${address}&apikey=${etherscanApiKey}`);
+        const tokenData = await tokenRes.json();
+        if (tokenData.status === "1") {
+          for (const token of tokenData.result) {
+            const balance = token.balance / Math.pow(10, token.decimals);
+            const price = await getPrice(token.symbol).catch(() => 1);
+            const tokenTxRes = await fetch(`https://api.etherscan.io/api?module=account&action=tokentx&contractaddress=${token.contractAddress}&address=${address}&sort=desc&apikey=${etherscanApiKey}`);
+            const tokenTxData = await tokenTxRes.json();
+            let tokenLastTx = 'N/A', tokenLastTxTime = 0;
+            if (tokenTxData.status === "1" && tokenTxData.result.length > 0) {
+              tokenLastTx = `<a href="https://etherscan.io/tx/${tokenTxData.result[0].hash}" target="_blank">${tokenTxData.result[0].hash.slice(0, 8)}...</a>`;
+              tokenLastTxTime = tokenTxData.result[0].timeStamp;
+            }
+            tokens.push({
+              name: token.name,
+              symbol: token.symbol,
+              balance: balance.toFixed(4),
+              valueBRL: (balance * price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+              lastTx: tokenLastTx,
+              lastTxTime: tokenLastTxTime
+            });
+          }
+        }
+        tokens.unshift({
+          name: 'Ethereum',
+          symbol: nativeSymbol,
+          balance: nativeBalance.toFixed(4),
+          valueBRL: (nativeBalance * nativePrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+          lastTx,
+          lastTxTime
+        });
+      } else if (blockchain === 'bsc') {
+        nativeSymbol = 'BNB';
+        const balanceRes = await fetch(`https://api.bscscan.com/api?module=account&action=balance&address=${address}&tag=latest&apikey=${bscscanApiKey}`);
+        const balanceData = await balanceRes.json();
+        if (balanceData.status !== "1") throw new Error(balanceData.message || 'Erro na API BscScan');
+        nativeBalance = balanceData.result / 1e18;
+        nativePrice = await getPrice('BNB');
+        const txRes = await fetch(`https://api.bscscan.com/api?module=account&action=txlist&address=${address}&sort=desc&apikey=${bscscanApiKey}`);
+        const txData = await txRes.json();
+        if (txData.status === "1" && txData.result.length > 0) {
+          lastTx = `<a href="https://bscscan.com/tx/${txData.result[0].hash}" target="_blank">${txData.result[0].hash.slice(0, 8)}...</a>`;
+          lastTxTime = txData.result[0].timeStamp;
+        }
+        const tokenRes = await fetch(`https://api.bscscan.com/api?module=account&action=tokenlist&address=${address}&apikey=${bscscanApiKey}`);
+        const tokenData = await tokenRes.json();
+        if (tokenData.status === "1") {
+          for (const token of tokenData.result) {
+            const balance = token.balance / Math.pow(10, token.decimals);
+            const price = await getPrice(token.symbol).catch(() => 1);
+            const tokenTxRes = await fetch(`https://api.bscscan.com/api?module=account&action=tokentx&contractaddress=${token.contractAddress}&address=${address}&sort=desc&apikey=${bscscanApiKey}`);
+            const tokenTxData = await tokenTxRes.json();
+            let tokenLastTx = 'N/A', tokenLastTxTime = 0;
+            if (tokenTxData.status === "1" && tokenTxData.result.length > 0) {
+              tokenLastTx = `<a href="https://bscscan.com/tx/${tokenTxData.result[0].hash}" target="_blank">${tokenTxData.result[0].hash.slice(0, 8)}...</a>`;
+              tokenLastTxTime = tokenTxData.result[0].timeStamp;
+            }
+            tokens.push({
+              name: token.name,
+              symbol: token.symbol,
+              balance: balance.toFixed(4),
+              valueBRL: (balance * price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+              lastTx: tokenLastTx,
+              lastTxTime: tokenLastTxTime
+            });
+          }
+        }
+        tokens.unshift({
+          name: 'Binance Coin',
+          symbol: nativeSymbol,
+          balance: nativeBalance.toFixed(4),
+          valueBRL: (nativeBalance * nativePrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+          lastTx,
+          lastTxTime
+        });
+      } else if (blockchain === 'solana') {
+        nativeSymbol = 'SOL';
+        const { Connection, PublicKey } = solanaWeb3;
+        const connection = new Connection('https://api.mainnet-beta.solana.com');
+        let publicKey;
+        try {
+          publicKey = new PublicKey(address);
+        } catch (err) {
+          throw new Error('Endereço Solana inválido');
+        }
+        nativeBalance = await connection.getBalance(publicKey).then(lamports => lamports / 1e9);
+        nativePrice = await getPrice('SOL');
+        const recentTxs = await connection.getConfirmedSignaturesForAddress2(publicKey, { limit: 1 });
+        if (recentTxs.length > 0) {
+          lastTx = `<a href="https://solscan.io/tx/${recentTxs[0].signature}" target="_blank">${recentTxs[0].signature.slice(0, 8)}...</a>`;
+          lastTxTime = recentTxs[0].blockTime;
+        }
+        tokens.push({
+          name: 'Solana',
+          symbol: nativeSymbol,
+          balance: nativeBalance.toFixed(4),
+          valueBRL: (nativeBalance * nativePrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+          lastTx,
+          lastTxTime
+        });
+      }
+
+      return tokens;
+    }
+
+    async function renderTokens() {
+      const params = new URLSearchParams(window.location.search);
+      const address = params.get('address');
+      const blockchain = params.get('blockchain');
+      const tbody = document.getElementById('token-table-body');
+
+      if (!address || !blockchain) {
+        showStatusMessage('Endereço ou blockchain não especificados.', 'error');
+        tbody.innerHTML = '<tr><td colspan="5" class="no-results">Nenhum dado disponível.</td></tr>';
+        return;
+      }
+
+      showStatusMessage('Carregando tokens...', 'loading');
+      try {
+        const tokens = await fetchTokens(address, blockchain);
+        tbody.innerHTML = '';
+        if (tokens.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="no-results">Nenhum token encontrado.</td></tr>';
+          return;
+        }
+        tokens.forEach(token => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${token.name} (${token.symbol})</td>
+              <td>${token.balance}</td>
+              <td>${token.valueBRL}</td>
+              <td>${token.lastTx}</td>
+              <td>${token.lastTxTime ? formatDateTime(token.lastTxTime) : 'N/A'}</td>
+            </tr>
+          `;
+        });
+        showStatusMessage('Tokens carregados com sucesso!', 'loading');
+      } catch (err) {
+        console.error('Erro ao carregar tokens:', err.message);
+        showStatusMessage(`Erro: ${err.message}`, 'error');
+        tbody.innerHTML = '<tr><td colspan="5" class="no-results">Erro ao carregar tokens.</td></tr>';
+      }
+    }
+
+    renderTokens();
+  </script>
+</body>
+</html>
