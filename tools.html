@@ -103,27 +103,18 @@
     .wallet-form button:hover, .search-form button:hover, .clear-history:hover {
       background: #2563eb;
     }
-    .delete-btn, .tokens-btn {
+    .delete-btn {
       padding: 5px 10px;
       font-size: 0.8rem;
+      background: #ef4444;
+      color: #ffffff;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       transition: background 0.2s;
     }
-    .delete-btn {
-      background: #ef4444;
-      color: #ffffff;
-    }
     .delete-btn:hover {
       background: #dc2626;
-    }
-    .tokens-btn {
-      background: #10b981;
-      color: #ffffff;
-    }
-    .tokens-btn:hover {
-      background: #059669;
     }
 
     .error-message, .loading-message {
@@ -135,25 +126,17 @@
     .error-message { background: #ef4444; color: #fff; }
     .loading-message { background: #3b82f6; color: #fff; }
 
-    .table-container {
-      max-width: 100%;
-      overflow-x: auto;
-    }
     table {
       width: 100%;
       border-collapse: collapse;
       background: #1f1f23;
       border-radius: 8px;
       overflow: hidden;
-      table-layout: fixed;
     }
     th, td {
       padding: 10px 14px;
       text-align: left;
       font-size: 0.9rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
     th {
       color: #93c5fd;
@@ -163,26 +146,9 @@
       transition: background 0.2s;
     }
     th:hover { background: #333; }
-    tbody {
-      max-height: 200px; /* Aproximadamente 5 linhas */
-      overflow-y: auto;
-      display: block;
-    }
-    tbody tr {
-      border-bottom: 1px solid #2d2d31;
-      transition: background 0.2s;
-      display: table;
-      width: 100%;
-      table-layout: fixed;
-    }
+    tbody tr { border-bottom: 1px solid #2d2d31; transition: background 0.2s; }
     tbody tr:hover { background: #27272a; cursor: pointer; }
-    .no-results { text-align: center; padding: 20px; color: #9ca3af; display: table; width: 100%; }
-
-    /* Larguras das colunas */
-    th:nth-child(1), td:nth-child(1) { width: 30%; } /* Endereço */
-    th:nth-child(2), td:nth-child(2) { width: 25%; } /* Blockchain */
-    th:nth-child(3), td:nth-child(3) { width: 25%; } /* Valor Total */
-    th:nth-child(4), td:nth-child(4) { width: 20%; } /* Ação */
+    .no-results { text-align: center; padding: 20px; color: #9ca3af; }
 
     .explorer-grid {
       display: grid;
@@ -244,10 +210,6 @@
       .explorer-card { padding: 16px; }
       .explorer-card h3 { font-size: 1.1rem; }
       .explorer-card p { font-size: 0.8rem; }
-      th:nth-child(1), td:nth-child(1) { width: 35%; }
-      th:nth-child(2), td:nth-child(2) { width: 25%; }
-      th:nth-child(3), td:nth-child(3) { width: 20%; }
-      th:nth-child(4), td:nth-child(4) { width: 20%; }
     }
   </style>
 </head>
@@ -288,19 +250,21 @@
       <button onclick="debouncedTrackWallet()">Rastrear</button>
       <button class="clear-history" onclick="clearWalletHistory()">Limpar Histórico</button>
     </div>
-    <div class="table-container">
-      <table id="wallet-table">
-        <thead>
-          <tr>
-            <th>Endereço</th>
-            <th>Blockchain</th>
-            <th>Valor Total (BRL)</th>
-            <th>Ação</th>
-          </tr>
-        </thead>
-        <tbody id="wallet-table-body"></tbody>
-      </table>
-    </div>
+    <table id="wallet-table">
+      <thead>
+        <tr>
+          <th>Endereço</th>
+          <th>Blockchain</th>
+          <th>Ativo</th>
+          <th>Saldo</th>
+          <th>Valor (BRL)</th>
+          <th>Última Transação</th>
+          <th>Horário</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody id="wallet-table-body"></tbody>
+    </table>
   </div>
   <div class="explorer-section">
     <h2>Exploradores de Blockchain</h2>
@@ -347,13 +311,12 @@
     © 2025 CryptoPulse | Dados: CoinMarketCap, CoinGecko, Etherscan, BscScan, Solscan
   </footer>
   <script>
-    const cmcApiKey = "9e0ef985-caf5-43d3-90e0-a73304b5546e";
+    const cmcApiKey = "9e0ef985-caf5-43d3-90e0-a73304b5546e"; // Substitua por uma chave válida, se necessário
     const etherscanApiKey = "D6DM8WTG21IFNBTT337SWZE7B4MWIAIC4Z";
     const bscscanApiKey = "B5I5TUJB6JV8A8U7X2HPYZEYVKGEKCUXRJ";
     const wallets = JSON.parse(localStorage.getItem('wallets')) || [];
     const cacheTTL = 300000; // 5 minutos
     const historyTTL = 24 * 60 * 60 * 1000; // 24 horas
-    const maxWallets = 5; // Limite de 5 buscas
     let debounceTimeout;
 
     function toggleDropdown() {
@@ -369,12 +332,14 @@
       }
     });
 
+    // Função para exibir mensagens na UI
     function showStatusMessage(message, type = 'error') {
       const statusDiv = document.getElementById('status-message');
       statusDiv.innerHTML = `<div class="${type}-message">${message}</div>`;
       setTimeout(() => statusDiv.innerHTML = '', 5000);
     }
 
+    // Função para formatar data/hora
     function formatDateTime(timestamp) {
       return new Date(timestamp).toLocaleString('pt-BR', {
         day: '2-digit',
@@ -386,6 +351,7 @@
       });
     }
 
+    // Função para limpar histórico
     function clearWalletHistory() {
       wallets.length = 0;
       localStorage.setItem('wallets', JSON.stringify(wallets));
@@ -393,6 +359,7 @@
       showStatusMessage('Histórico limpo com sucesso!', 'loading');
     }
 
+    // Função para apagar uma busca específica
     function deleteWallet(index) {
       wallets.splice(index, 1);
       localStorage.setItem('wallets', JSON.stringify(wallets));
@@ -400,6 +367,7 @@
       showStatusMessage('Busca removida com sucesso!', 'loading');
     }
 
+    // Função para limpar buscas expiradas
     function cleanExpiredWallets() {
       const now = Date.now();
       const filteredWallets = wallets.filter(wallet => now - wallet.timestamp < historyTTL);
@@ -411,6 +379,7 @@
       }
     }
 
+    // Função de cache
     function getCachedData(key, fetchFn) {
       const cached = localStorage.getItem(key);
       if (cached) {
@@ -429,6 +398,7 @@
       });
     }
 
+    // Função para obter preço em BRL
     async function getPrice(symbol) {
       return getCachedData(`price_${symbol}`, async () => {
         try {
@@ -446,6 +416,7 @@
       });
     }
 
+    // Função para validar endereço
     function isValidAddress(address, blockchain) {
       if (!address) return false;
       if (blockchain === 'solana' || blockchain === 'auto') {
@@ -454,6 +425,7 @@
       return /^0x[a-fA-F0-9]{40}$/.test(address);
     }
 
+    // Função para detectar blockchain automaticamente
     async function detectBlockchain(address) {
       console.log(`Detectando blockchain para endereço: ${address}`);
       if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)) {
@@ -504,82 +476,6 @@
       throw new Error('Nenhuma blockchain válida encontrada para o endereço');
     }
 
-    async function getTokens(address, blockchain) {
-      const tokens = [];
-      let nativeBalance = 0, nativeSymbol, nativePrice;
-
-      if (blockchain === 'ethereum') {
-        nativeSymbol = 'ETH';
-        const balanceRes = await fetch(`https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${etherscanApiKey}`);
-        const balanceData = await balanceRes.json();
-        if (balanceData.status !== "1") throw new Error(balanceData.message || 'Erro na API Etherscan');
-        nativeBalance = balanceData.result / 1e18;
-        nativePrice = await getPrice('ETH');
-        const tokenRes = await fetch(`https://api.etherscan.io/api?module=account&action=tokenlist&address=${address}&apikey=${etherscanApiKey}`);
-        const tokenData = await tokenRes.json();
-        if (tokenData.status === "1") {
-          for (const token of tokenData.result) {
-            const balance = token.balance / Math.pow(10, token.decimals);
-            const price = await getPrice(token.symbol).catch(() => 1); // Fallback se não houver preço
-            tokens.push({
-              name: token.name,
-              symbol: token.symbol,
-              balance,
-              valueBRL: (balance * price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-            });
-          }
-        }
-      } else if (blockchain === 'bsc') {
-        nativeSymbol = 'BNB';
-        const balanceRes = await fetch(`https://api.bscscan.com/api?module=account&action=balance&address=${address}&tag=latest&apikey=${bscscanApiKey}`);
-        const balanceData = await balanceRes.json();
-        if (balanceData.status !== "1") throw new Error(balanceData.message || 'Erro na API BscScan');
-        nativeBalance = balanceData.result / 1e18;
-        nativePrice = await getPrice('BNB');
-        const tokenRes = await fetch(`https://api.bscscan.com/api?module=account&action=tokenlist&address=${address}&apikey=${bscscanApiKey}`);
-        const tokenData = await tokenRes.json();
-        if (tokenData.status === "1") {
-          for (const token of tokenData.result) {
-            const balance = token.balance / Math.pow(10, token.decimals);
-            const price = await getPrice(token.symbol).catch(() => 1);
-            tokens.push({
-              name: token.name,
-              symbol: token.symbol,
-              balance,
-              valueBRL: (balance * price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-            });
-          }
-        }
-      } else if (blockchain === 'solana') {
-        nativeSymbol = 'SOL';
-        const { Connection, PublicKey } = solanaWeb3;
-        const connection = new Connection('https://api.mainnet-beta.solana.com');
-        let publicKey;
-        try {
-          publicKey = new PublicKey(address);
-        } catch (err) {
-          throw new Error('Endereço Solana inválido');
-        }
-        nativeBalance = await connection.getBalance(publicKey).then(lamports => lamports / 1e9);
-        nativePrice = await getPrice('SOL');
-        // Tokens SPL não suportados diretamente pela API gratuita; apenas SOL por enquanto
-      }
-
-      tokens.unshift({
-        name: blockchain === 'ethereum' ? 'Ethereum' : blockchain === 'bsc' ? 'Binance Coin' : 'Solana',
-        symbol: nativeSymbol,
-        balance: nativeBalance,
-        valueBRL: (nativeBalance * nativePrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-      });
-
-      const totalValueBRL = tokens.reduce((sum, token) => {
-        const value = parseFloat(token.valueBRL.replace(/[^\d,.]/g, '').replace(',', '.'));
-        return sum + value;
-      }, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-      return { tokens, totalValueBRL };
-    }
-
     async function trackWallet() {
       const blockchainInput = document.getElementById('blockchain').value;
       const address = document.getElementById('wallet-address').value.trim();
@@ -602,10 +498,59 @@
       }
 
       try {
-        const { totalValueBRL } = await getTokens(address, blockchain);
+        let balance, lastTx = 'N/A', symbol, price, assetName;
+        symbol = blockchain === 'ethereum' ? 'ETH' : blockchain === 'bsc' ? 'BNB' : 'SOL';
+        assetName = blockchain === 'ethereum' ? 'Ethereum' : blockchain === 'bsc' ? 'Binance Coin' : 'Solana';
+
+        if (blockchain === 'ethereum') {
+          console.log('Buscando dados para Ethereum:', address);
+          const balanceRes = await fetch(`https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${etherscanApiKey}`);
+          const balanceData = await balanceRes.json();
+          console.log('Resposta Etherscan:', balanceData);
+          if (balanceData.status !== "1") throw new Error(balanceData.message || 'Endereço Ethereum inválido ou erro na API');
+          balance = (balanceData.result / 1e18).toFixed(4);
+          price = await getPrice('ETH');
+          const txRes = await fetch(`https://api.etherscan.io/api?module=account&action=txlist&address=${address}&sort=desc&apikey=${etherscanApiKey}`);
+          const txData = await txRes.json();
+          console.log('Transações Ethereum:', txData);
+          if (txData.status === "1" && txData.result.length > 0) {
+            lastTx = `<a href="https://etherscan.io/tx/${txData.result[0].hash}" target="_blank">${txData.result[0].hash.slice(0, 8)}...</a>`;
+          }
+        } else if (blockchain === 'bsc') {
+          console.log('Buscando dados para BSC:', address);
+          const balanceRes = await fetch(`https://api.bscscan.com/api?module=account&action=balance&address=${address}&tag=latest&apikey=${bscscanApiKey}`);
+          const balanceData = await balanceRes.json();
+          console.log('Resposta BscScan:', balanceData);
+          if (balanceData.status !== "1") throw new Error(balanceData.message || 'Endereço BSC inválido ou erro na API');
+          balance = (balanceData.result / 1e18).toFixed(4);
+          price = await getPrice('BNB');
+          const txRes = await fetch(`https://api.bscscan.com/api?module=account&action=txlist&address=${address}&sort=desc&apikey=${bscscanApiKey}`);
+          const txData = await txRes.json();
+          console.log('Transações BSC:', txData);
+          if (txData.status === "1" && txData.result.length > 0) {
+            lastTx = `<a href="https://bscscan.com/tx/${txData.result[0].hash}" target="_blank">${txData.result[0].hash.slice(0, 8)}...</a>`;
+          }
+        } else if (blockchain === 'solana') {
+          console.log('Buscando dados para Solana:', address);
+          const { Connection, PublicKey } = solanaWeb3;
+          const connection = new Connection('https://api.mainnet-beta.solana.com');
+          let publicKey;
+          try {
+            publicKey = new PublicKey(address);
+          } catch (err) {
+            throw new Error('Endereço Solana inválido');
+          }
+          balance = await connection.getBalance(publicKey).then(lamports => (lamports / 1e9).toFixed(4));
+          price = await getPrice('SOL');
+          const recentTxs = await connection.getConfirmedSignaturesForAddress2(publicKey, { limit: 1 });
+          console.log('Transações Solana:', recentTxs);
+          if (recentTxs.length > 0) {
+            lastTx = `<a href="https://solscan.io/tx/${recentTxs[0].signature}" target="_blank">${recentTxs[0].signature.slice(0, 8)}...</a>`;
+          }
+        }
+        const valueBRL = (balance * price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const timestamp = Date.now();
-        wallets.unshift({ address, blockchain, totalValueBRL, timestamp });
-        if (wallets.length > maxWallets) wallets.pop();
+        wallets.unshift({ address, blockchain, assetName, balance, symbol, valueBRL, lastTx, timestamp }); // Adiciona no início
         localStorage.setItem('wallets', JSON.stringify(wallets));
         cleanExpiredWallets();
         renderWallets();
@@ -616,6 +561,7 @@
       }
     }
 
+    // Debounce para trackWallet
     function debouncedTrackWallet() {
       clearTimeout(debounceTimeout);
       debounceTimeout = setTimeout(trackWallet, 300);
@@ -625,7 +571,7 @@
       const tbody = document.getElementById('wallet-table-body');
       tbody.innerHTML = '';
       if (wallets.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="no-results">Nenhuma carteira rastreada.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="no-results">Nenhuma carteira rastreada.</td></tr>';
         return;
       }
       wallets.forEach((wallet, index) => {
@@ -633,11 +579,12 @@
           <tr>
             <td><a href="${wallet.blockchain === 'ethereum' ? 'https://etherscan.io/address/' : wallet.blockchain === 'bsc' ? 'https://bscscan.com/address/' : 'https://solscan.io/account/'}${wallet.address}" target="_blank">${wallet.address.slice(0, 8)}...</a></td>
             <td>${wallet.blockchain.charAt(0).toUpperCase() + wallet.blockchain.slice(1)}</td>
-            <td>${wallet.totalValueBRL}</td>
-            <td>
-              <button class="tokens-btn" onclick="window.location.href='tokens.html?address=${wallet.address}&blockchain=${wallet.blockchain}'">Ver Tokens</button>
-              <button class="delete-btn" onclick="deleteWallet(${index})">Apagar</button>
-            </td>
+            <td>${wallet.assetName} (${wallet.symbol})</td>
+            <td>${wallet.balance}</td>
+            <td>${wallet.valueBRL}</td>
+            <td>${wallet.lastTx}</td>
+            <td>${formatDateTime(wallet.timestamp)}</td>
+            <td><button class="delete-btn" onclick="deleteWallet(${index})">Apagar</button></td>
           </tr>
         `;
       });
@@ -665,6 +612,7 @@
       window.open(url, '_blank');
     }
 
+    // Inicializar com limpeza de buscas expiradas
     cleanExpiredWallets();
     renderWallets();
   </script>
