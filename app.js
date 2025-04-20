@@ -1,4 +1,4 @@
-// Traduções
+// Traduções (inalteradas, com suporte para pt, en, es, fr, de)
 const translations = {
   pt: {
     title: "CryptoPulse",
@@ -32,13 +32,15 @@ const translations = {
     volume_24h: "Volume 24h",
     btc_dominance: "Dominância do Bitcoin",
     no_results: "Nenhuma moeda encontrada",
-    error_loading: "Erro ao carregar dados",
+    error_loading: "Erro ao carregar dados. Tente novamente mais tarde.",
     all_categories: "Todas as Categorias",
     defi: "DeFi",
     meme: "Meme Coins",
     stablecoin: "Stablecoins",
     layer1: "Layer 1",
-    layer2: "Layer 2"
+    layer2: "Layer 2",
+    cached_data: "Dados em cache",
+    api_error: "Erro na API, usando dados em cache ou mock"
   },
   en: {
     title: "CryptoPulse",
@@ -72,13 +74,15 @@ const translations = {
     volume_24h: "24h Volume",
     btc_dominance: "Bitcoin Dominance",
     no_results: "No coins found",
-    error_loading: "Error loading data",
+    error_loading: "Error loading data. Please try again later.",
     all_categories: "All Categories",
     defi: "DeFi",
     meme: "Meme Coins",
     stablecoin: "Stablecoins",
     layer1: "Layer 1",
-    layer2: "Layer 2"
+    layer2: "Layer 2",
+    cached_data: "Cached Data",
+    api_error: "API error, using cached or mock data"
   },
   es: {
     title: "CryptoPulse",
@@ -112,13 +116,15 @@ const translations = {
     volume_24h: "Volumen 24h",
     btc_dominance: "Dominancia de Bitcoin",
     no_results: "No se encontraron monedas",
-    error_loading: "Error al cargar datos",
+    error_loading: "Error al cargar datos. Intenta de nuevo más tarde.",
     all_categories: "Todas las Categorías",
     defi: "DeFi",
     meme: "Monedas Meme",
     stablecoin: "Stablecoins",
     layer1: "Layer 1",
-    layer2: "Layer 2"
+    layer2: "Layer 2",
+    cached_data: "Datos en caché",
+    api_error: "Error de API, usando datos en caché o simulados"
   },
   fr: {
     title: "CryptoPulse",
@@ -150,28 +156,30 @@ const translations = {
     modal_error: "Erreur lors du chargement des détails de la monnaie",
     total_market_cap: "Capitalisation Totale",
     volume_24h: "Volume 24h",
-    btc_dominance: "Dominance de Bitcoin",
+    btc_dominance: "Dominance du Bitcoin",
     no_results: "Aucune monnaie trouvée",
-    error_loading: "Erreur lors du chargement des données",
+    error_loading: "Erreur lors du chargement des données. Réessayez plus tard.",
     all_categories: "Toutes les Catégories",
     defi: "DeFi",
-    meme: "Monnaies Mème",
+    meme: "Mèmes Coins",
     stablecoin: "Stablecoins",
     layer1: "Layer 1",
-    layer2: "Layer 2"
+    layer2: "Layer 2",
+    cached_data: "Données en cache",
+    api_error: "Erreur API, utilisation des données en cache ou simulées"
   },
   de: {
     title: "CryptoPulse",
     theme_dark: "Dunkles Thema",
     theme_light: "Helles Thema",
     portfolio: "Persönliches Portfolio",
-    trackers: "Tracker & Explorer",
+    trackers: "Tracker & Entdecker",
     settings: "Einstellungen",
     market_title: "Kryptowährungsmarkt",
     search_placeholder: "Nach Name oder Symbol suchen...",
     search_button: "Suchen",
-    previous: "Zurück",
-    next: "Weiter",
+    previous: "Vorherige",
+    next: "Nächste",
     page: "Seite {0}",
     rank: "#",
     coin: "Münze",
@@ -189,16 +197,18 @@ const translations = {
     not_available: "Nicht verfügbar",
     modal_error: "Fehler beim Laden der Münzdetails",
     total_market_cap: "Gesamtmarktkapitalisierung",
-    volume_24h: "24h-Volumen",
+    volume_24h: "24h Volumen",
     btc_dominance: "Bitcoin-Dominanz",
     no_results: "Keine Münzen gefunden",
-    error_loading: "Fehler beim Laden der Daten",
+    error_loading: "Fehler beim Laden der Daten. Bitte später erneut versuchen.",
     all_categories: "Alle Kategorien",
     defi: "DeFi",
     meme: "Meme-Münzen",
     stablecoin: "Stablecoins",
     layer1: "Layer 1",
-    layer2: "Layer 2"
+    layer2: "Layer 2",
+    cached_data: "Daten im Cache",
+    api_error: "API-Fehler, Verwendung von Cache- oder Mock-Daten"
   }
 };
 
@@ -207,9 +217,10 @@ const cgApiBaseUrl = 'https://api.coingecko.com/api/v3';
 const cgCoinsListUrl = `${cgApiBaseUrl}/coins/list`;
 const cgMarketsUrl = `${cgApiBaseUrl}/coins/markets`;
 const cgGlobalUrl = `${cgApiBaseUrl}/global`;
+
+// Estado global
 let allCoinsList = [];
-let cryptoData = [];
-let filteredData = [];
+let coinsData = [];
 let sortColumn = 'cmc_rank';
 let sortDirection = 1;
 let currentPage = 1;
@@ -217,39 +228,22 @@ const itemsPerPage = 20;
 let priceChart = null;
 let debounceTimeout;
 let totalMarketCap = 0;
+let globalData = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+const UPDATE_INTERVAL = 5 * 60 * 1000; // 5 minutos
 
-// Dados de teste (30 moedas, com dominância corrigida)
+// Dados de teste (usados apenas como último recurso)
 const mockData = [
-  { id: "bitcoin", name: "Bitcoin", symbol: "BTC", cmc_rank: 1, current_price: 350000, price_change_percentage_24h: 2.5, market_cap: 7000000000000, market_cap_dominance: (7000000000000 / 9000000000000) * 100, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
-  { id: "ethereum", name: "Ethereum", symbol: "ETH", cmc_rank: 2, current_price: 15000, price_change_percentage_24h: -1.2, market_cap: 1800000000000, market_cap_dominance: (1800000000000 / 9000000000000) * 100, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png' },
-  { id: "tether", name: "Tether", symbol: "USDT", cmc_rank: 3, current_price: 5.5, price_change_percentage_24h: 0.1, market_cap: 150000000000, market_cap_dominance: (150000000000 / 9000000000000) * 100, category: 'stablecoin', image: 'https://assets.coingecko.com/coins/images/325/small/Tether.png' },
-  { id: "binancecoin", name: "Binance Coin", symbol: "BNB", cmc_rank: 4, current_price: 3000, price_change_percentage_24h: 1.8, market_cap: 450000000000, market_cap_dominance: (450000000000 / 9000000000000) * 100, category: '', image: 'https://assets.coingecko.com/coins/images/825/small/binance-coin-logo.png' },
-  { id: "solana", name: "Solana", symbol: "SOL", cmc_rank: 5, current_price: 800, price_change_percentage_24h: 3.2, market_cap: 300000000000, market_cap_dominance: (300000000000 / 9000000000000) * 100, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/4128/small/solana.png' },
-  { id: "ripple", name: "XRP", symbol: "XRP", cmc_rank: 6, current_price: 3.5, price_change_percentage_24h: -0.5, market_cap: 200000000000, market_cap_dominance: (200000000000 / 9000000000000) * 100, category: '', image: 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png' },
-  { id: "cardano", name: "Cardano", symbol: "ADA", cmc_rank: 7, current_price: 2.8, price_change_percentage_24h: 2.1, market_cap: 100000000000, market_cap_dominance: (100000000000 / 9000000000000) * 100, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/975/small/cardano.png' },
-  { id: "avalanche-2", name: "Avalanche", symbol: "AVAX", cmc_rank: 8, current_price: 200, price_change_percentage_24h: -2.3, market_cap: 80000000000, market_cap_dominance: (80000000000 / 9000000000000) * 100, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/12559/small/avalanche.png' },
-  { id: "dogecoin", name: "Dogecoin", symbol: "DOGE", cmc_rank: 9, current_price: 0.75, price_change_percentage_24h: 4.0, market_cap: 70000000000, market_cap_dominance: (70000000000 / 9000000000000) * 100, category: 'meme', image: 'https://assets.coingecko.com/coins/images/5/small/dogecoin.png' },
-  { id: "chainlink", name: "Chainlink", symbol: "LINK", cmc_rank: 10, current_price: 80, price_change_percentage_24h: 1.5, market_cap: 60000000000, market_cap_dominance: (60000000000 / 9000000000000) * 100, category: 'defi', image: 'https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png' },
-  { id: "polkadot", name: "Polkadot", symbol: "DOT", cmc_rank: 11, current_price: 35, price_change_percentage_24h: 0.8, market_cap: 50000000000, market_cap_dominance: (50000000000 / 9000000000000) * 100, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/12171/small/polkadot.png' },
-  { id: "matic-network", name: "Polygon", symbol: "MATIC", cmc_rank: 12, current_price: 2.5, price_change_percentage_24h: -1.0, market_cap: 40000000000, market_cap_dominance: (40000000000 / 9000000000000) * 100, category: 'layer-2', image: 'https://assets.coingecko.com/coins/images/4713/small/matic-token-icon.png' },
-  { id: "shiba-inu", name: "Shiba Inu", symbol: "SHIB", cmc_rank: 13, current_price: 0.0001, price_change_percentage_24h: 5.2, market_cap: 35000000000, market_cap_dominance: (35000000000 / 9000000000000) * 100, category: 'meme', image: 'https://assets.coingecko.com/coins/images/11939/small/shiba.png' },
-  { id: "uniswap", name: "Uniswap", symbol: "UNI", cmc_rank: 14, current_price: 40, price_change_percentage_24h: 2.7, market_cap: 30000000000, market_cap_dominance: (30000000000 / 9000000000000) * 100, category: 'defi', image: 'https://assets.coingecko.com/coins/images/12504/small/uniswap-uni.png' },
-  { id: "near", name: "NEAR Protocol", symbol: "NEAR", cmc_rank: 15, current_price: 30, price_change_percentage_24h: -0.9, market_cap: 28000000000, market_cap_dominance: (28000000000 / 9000000000000) * 100, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/10365/small/near_icon.png' },
-  { id: "wrapped-bitcoin", name: "Wrapped Bitcoin", symbol: "WBTC", cmc_rank: 16, current_price: 349000, price_change_percentage_24h: 2.4, market_cap: 25000000000, market_cap_dominance: (25000000000 / 9000000000000) * 100, category: '', image: 'https://assets.coingecko.com/coins/images/7598/small/wrapped_bitcoin_wbtc.png' },
-  { id: "filecoin", name: "Filecoin", symbol: "FIL", cmc_rank: 17, current_price: 25, price_change_percentage_24h: 1.1, market_cap: 22000000000, market_cap_dominance: (22000000000 / 9000000000000) * 100, category: '', image: 'https://assets.coingecko.com/coins/images/12817/small/filecoin.png' },
-  { id: "fantom", name: "Fantom", symbol: "FTM", cmc_rank: 18, current_price: 4.5, price_change_percentage_24h: 3.5, market_cap: 20000000000, market_cap_dominance: (20000000000 / 9000000000000) * 100, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/4001/small/Fantom.png' },
-  { id: "hedera-hashgraph", name: "Hedera", symbol: "HBAR", cmc_rank: 19, current_price: 0.5, price_change_percentage_24h: -1.5, market_cap: 18000000000, market_cap_dominance: (18000000000 / 9000000000000) * 100, category: '', image: 'https://assets.coingecko.com/coins/images/3688/small/hbar.png' },
-  { id: "vechain", name: "VeChain", symbol: "VET", cmc_rank: 20, current_price: 0.15, price_change_percentage_24h: 0.6, market_cap: 15000000000, market_cap_dominance: (15000000000 / 9000000000000) * 100, category: '', image: 'https://assets.coingecko.com/coins/images/1167/small/VeChain-Logo.png' },
-  { id: "tezos", name: "Tezos", symbol: "XTZ", cmc_rank: 21, current_price: 5, price_change_percentage_24h: -0.7, market_cap: 14000000000, market_cap_dominance: (14000000000 / 9000000000000) * 100, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/976/small/Tezos-logo.png' },
-  { id: "huobi-token", name: "Huobi Token", symbol: "HT", cmc_rank: 22, current_price: 3, price_change_percentage_24h: 1.2, market_cap: 13000000000, market_cap_dominance: (13000000000 / 9000000000000) * 100, category: '', image: 'https://assets.coingecko.com/coins/images/2822/small/huobi-token-logo.png' },
-  { id: "iota", name: "IOTA", symbol: "IOTA", cmc_rank: 23, current_price: 0.8, price_change_percentage_24h: 2.0, market_cap: 12000000000, market_cap_dominance: (12000000000 / 9000000000000) * 100, category: '', image: 'https://assets.coingecko.com/coins/images/692/small/IOTA_Swirl.png' },
-  { id: "ontology", name: "Ontology", symbol: "ONT", cmc_rank: 24, current_price: 1.2, price_change_percentage_24h: -0.3, market_cap: 11000000000, market_cap_dominance: (11000000000 / 9000000000000) * 100, category: '', image: 'https://assets.coingecko.com/coins/images/3447/small/ONT.png' },
-  { id: "zilliqa", name: "Zilliqa", symbol: "ZIL", cmc_rank: 25, current_price: 0.1, price_change_percentage_24h: 1.8, market_cap: 10000000000, market_cap_dominance: (10000000000 / 9000000000000) * 100, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/2283/small/zilliqa-logo.png' },
-  { id: "omisego", name: "OMG Network", symbol: "OMG", cmc_rank: 26, current_price: 2, price_change_percentage_24h: -1.1, market_cap: 9000000000, market_cap_dominance: (9000000000 / 9000000000000) * 100, category: 'layer-2', image: 'https://assets.coingecko.com/coins/images/776/small/OMG_Network.jpg' },
-  { id: "holo", name: "Holo", symbol: "HOT", cmc_rank: 27, current_price: 0.01, price_change_percentage_24h: 3.0, market_cap: 8000000000, market_cap_dominance: (8000000000 / 9000000000000) * 100, category: '', image: 'https://assets.coingecko.com/coins/images/3348/small/Holo.png' },
-  { id: "0x", name: "0x", symbol: "ZRX", cmc_rank: 28, current_price: 1.5, price_change_percentage_24h: 0.5, market_cap: 7000000000, market_cap_dominance: (7000000000 / 9000000000000) * 100, category: 'defi', image: 'https://assets.coingecko.com/coins/images/863/small/0x.png' },
-  { id: "enjincoin", name: "Enjin Coin", symbol: "ENJ", cmc_rank: 29, current_price: 1, price_change_percentage_24h: 2.3, market_cap: 6000000000, market_cap_dominance: (6000000000 / 9000000000000) * 100, category: '', image: 'https://assets.coingecko.com/coins/images/1102/small/enjin-coin-logo.png' },
-  { id: "status", name: "Status", symbol: "SNT", cmc_rank: 30, current_price: 0.2, price_change_percentage_24h: -0.8, market_cap: 5000000000, market_cap_dominance: (5000000000 / 9000000000000) * 100, category: '', image: 'https://assets.coingecko.com/coins/images/779/small/status.png' }
+  { id: "bitcoin", name: "Bitcoin", symbol: "BTC", slug: "bitcoin", cmc_rank: 1, quote: { BRL: { price: 350000, percent_change_24h: 2.5, market_cap: 7000000000000, market_cap_dominance: (7000000000000 / 9000000000000) * 100 } }, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
+  { id: "ethereum", name: "Ethereum", symbol: "ETH", slug: "ethereum", cmc_rank: 2, quote: { BRL: { price: 15000, percent_change_24h: -1.2, market_cap: 1800000000000, market_cap_dominance: (1800000000000 / 9000000000000) * 100 } }, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png' },
+  { id: "tether", name: "Tether", symbol: "USDT", slug: "tether", cmc_rank: 3, quote: { BRL: { price: 5.5, percent_change_24h: 0.1, market_cap: 150000000000, market_cap_dominance: (150000000000 / 9000000000000) * 100 } }, category: 'stablecoin', image: 'https://assets.coingecko.com/coins/images/325/small/Tether.png' },
+  { id: "binancecoin", name: "Binance Coin", symbol: "BNB", slug: "binance-coin", cmc_rank: 4, quote: { BRL: { price: 3000, percent_change_24h: 1.8, market_cap: 450000000000, market_cap_dominance: (450000000000 / 9000000000000) * 100 } }, category: '', image: 'https://assets.coingecko.com/coins/images/825/small/binance-coin-logo.png' },
+  { id: "solana", name: "Solana", symbol: "SOL", slug: "solana", cmc_rank: 5, quote: { BRL: { price: 800, percent_change_24h: 3.2, market_cap: 300000000000, market_cap_dominance: (300000000000 / 9000000000000) * 100 } }, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/4128/small/solana.png' },
+  { id: "ripple", name: "XRP", symbol: "XRP", slug: "xrp", cmc_rank: 6, quote: { BRL: { price: 3.5, percent_change_24h: -0.5, market_cap: 200000000000, market_cap_dominance: (200000000000 / 9000000000000) * 100 } }, category: '', image: 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png' },
+  { id: "cardano", name: "Cardano", symbol: "ADA", slug: "cardano", cmc_rank: 7, quote: { BRL: { price: 2.8, percent_change_24h: 2.1, market_cap: 100000000000, market_cap_dominance: (100000000000 / 9000000000000) * 100 } }, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/975/small/cardano.png' },
+  { id: "avalanche-2", name: "Avalanche", symbol: "AVAX", slug: "avalanche", cmc_rank: 8, quote: { BRL: { price: 200, percent_change_24h: -2.3, market_cap: 80000000000, market_cap_dominance: (80000000000 / 9000000000000) * 100 } }, category: 'layer-1', image: 'https://assets.coingecko.com/coins/images/12559/small/avalanche.png' },
+  { id: "dogecoin", name: "Dogecoin", symbol: "DOGE", slug: "dogecoin", cmc_rank: 9, quote: { BRL: { price: 0.75, percent_change_24h: 4.0, market_cap: 70000000000, market_cap_dominance: (70000000000 / 9000000000000) * 100 } }, category: 'meme', image: 'https://assets.coingecko.com/coins/images/5/small/dogecoin.png' },
+  { id: "chainlink", name: "Chainlink", symbol: "LINK", slug: "chainlink", cmc_rank: 10, quote: { BRL: { price: 80, percent_change_24h: 1.5, market_cap: 60000000000, market_cap_dominance: (60000000000 / 9000000000000) * 100 } }, category: 'defi', image: 'https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png' }
 ];
 
 const mockGlobalData = {
@@ -262,6 +256,7 @@ const mockHistoricalData = {
   prices: Array.from({ length: 7 }, (_, i) => [Date.now() - (6 - i) * 24 * 60 * 60 * 1000, 340000 + i * 2000])
 };
 
+// Funções auxiliares
 function sanitizeInput(input) {
   return input.replace(/[<>]/g, '').trim();
 }
@@ -271,40 +266,121 @@ function formatPrice(price) {
   return `R$ ${price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`;
 }
 
+function formatDominance(dominance) {
+  if (dominance == null || isNaN(dominance) || dominance === 0) {
+    return translations[localStorage.getItem('language') || 'pt'].not_available;
+  }
+  return `${dominance.toFixed(2)}%`;
+}
+
+function loadCachedData() {
+  const cachedGlobal = localStorage.getItem('globalData');
+  const cachedGlobalTime = localStorage.getItem('globalDataTime');
+  const cachedCoins = localStorage.getItem('coinsData');
+  const cachedCoinsTime = localStorage.getItem('coinsDataTime');
+  const now = Date.now();
+
+  let globalData = null;
+  let coinsData = null;
+
+  if (cachedGlobal && cachedGlobalTime && (now - parseInt(cachedGlobalTime) < CACHE_DURATION)) {
+    try {
+      globalData = JSON.parse(cachedGlobal);
+      console.log(`Cache globalData carregado: total_market_cap=${globalData.total_market_cap?.brl}`);
+    } catch (err) {
+      console.error('Cache de globalData corrompido:', err.message);
+      localStorage.removeItem('globalData');
+      localStorage.removeItem('globalDataTime');
+    }
+  }
+
+  if (cachedCoins && cachedCoinsTime && (now - parseInt(cachedCoinsTime) < CACHE_DURATION)) {
+    try {
+      coinsData = JSON.parse(cachedCoins);
+      if (Array.isArray(coinsData) && coinsData.length > 0) {
+        console.log(`Cache coinsData carregado: ${coinsData.length} moedas`);
+      } else {
+        coinsData = null;
+      }
+    } catch (err) {
+      console.error('Cache de coinsData corrompido:', err.message);
+      localStorage.removeItem('coinsData');
+      localStorage.removeItem('coinsDataTime');
+    }
+  }
+
+  return { globalData, coinsData };
+}
+
+function saveCachedData(globalData, coinsData) {
+  const now = Date.now();
+  if (globalData) {
+    localStorage.setItem('globalData', JSON.stringify(globalData));
+    localStorage.setItem('globalDataTime', now.toString());
+    console.log('globalData salvo no cache');
+  }
+  if (coinsData && coinsData.length > 0) {
+    localStorage.setItem('coinsData', JSON.stringify(coinsData));
+    localStorage.setItem('coinsDataTime', now.toString());
+    console.log('coinsData salvo no cache');
+  }
+}
+
 async function fetchCoinsList() {
   const cached = localStorage.getItem('coinsList');
-  if (cached) {
-    allCoinsList = JSON.parse(cached);
-    if (allCoinsList.length > 0) return;
+  const cachedTime = localStorage.getItem('coinsListTime');
+  const now = Date.now();
+
+  if (cached && cachedTime && (now - parseInt(cachedTime) < CACHE_DURATION)) {
+    try {
+      allCoinsList = JSON.parse(cached);
+      if (Array.isArray(allCoinsList) && allCoinsList.length > 0) {
+        console.log(`Usando cache de coinsList: ${allCoinsList.length} moedas`);
+        return;
+      }
+    } catch (err) {
+      console.error('Cache de coinsList corrompido:', err.message);
+      localStorage.removeItem('coinsList');
+      localStorage.removeItem('coinsListTime');
+    }
   }
+
   try {
+    console.log('Buscando lista de moedas da API...');
     const res = await fetch(cgCoinsListUrl);
-    if (!res.ok) throw new Error('Erro na API CoinGecko /coins/list');
+    if (!res.ok) throw new Error(`Erro na API CoinGecko /coins/list: ${res.status}`);
     allCoinsList = await res.json();
     localStorage.setItem('coinsList', JSON.stringify(allCoinsList));
+    localStorage.setItem('coinsListTime', now.toString());
     console.log(`Lista de moedas carregada: ${allCoinsList.length} moedas`);
   } catch (err) {
     console.error('Erro ao carregar lista de moedas:', err.message);
     allCoinsList = mockData.map(coin => ({ id: coin.id, name: coin.name, symbol: coin.symbol }));
+    console.log(`Usando coinsList de mockData: ${allCoinsList.length} moedas`);
   }
 }
 
 async function fetchCgMarkets(ids = [], page = 1) {
+  if (!totalMarketCap) {
+    console.warn('totalMarketCap não definido, inicializando com 0');
+    totalMarketCap = 0;
+  }
+
   try {
-    console.log(`Buscando mercados com totalMarketCap: ${totalMarketCap}`);
+    console.log(`Buscando mercados: IDs=${ids.length || 'top 20'}, Página=${page}`);
     const params = new URLSearchParams({
       vs_currency: 'brl',
       ids: ids.join(','),
       order: 'market_cap_desc',
-      per_page: ids.length || 250,
+      per_page: ids.length || itemsPerPage,
       page,
       sparkline: false
     });
-    const url = ids.length ? `${cgMarketsUrl}?${params}` : `${cgMarketsUrl}?vs_currency=brl&order=market_cap_desc&per_page=10&page=1&sparkline=false`;
+    const url = `${cgMarketsUrl}?${params}`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Erro na API CoinGecko /coins/markets');
+    if (!res.ok) throw new Error(`Erro na API CoinGecko /coins/markets: ${res.status}`);
     const data = await res.json();
-    return data.map(coin => {
+    const result = data.map(coin => {
       const dominance = totalMarketCap && coin.market_cap ? (coin.market_cap / totalMarketCap) * 100 : 0;
       console.log(`Moeda: ${coin.name}, Market Cap: ${coin.market_cap}, Dominância: ${dominance.toFixed(2)}%`);
       return {
@@ -329,29 +405,61 @@ async function fetchCgMarkets(ids = [], page = 1) {
         image: coin.image || 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png'
       };
     });
+    console.log(`Mercados carregados: ${result.length} moedas`);
+    return result;
   } catch (err) {
     console.error('Erro CoinGecko /coins/markets:', err.message);
-    throw err;
+    throw err; // Propaga o erro para ser tratado pelo chamador
   }
 }
 
 async function fetchCgGlobalData() {
   try {
+    console.log('Buscando dados globais da API...');
     const res = await fetch(cgGlobalUrl);
-    if (!res.ok) throw new Error('Erro na API CoinGecko /global');
+    if (!res.ok) throw new Error(`Erro na API CoinGecko /global: ${res.status}`);
     const data = await res.json();
-    totalMarketCap = data.data.total_market_cap.brl || 0;
-    console.log(`Total Market Cap carregado: ${totalMarketCap}`);
-    return {
-      total_market_cap: totalMarketCap,
-      total_volume_24h: data.data.total_volume.brl || 0,
-      btc_dominance: data.data.market_cap_percentage?.btc || 0
+    const result = {
+      total_market_cap: { brl: Number(data.data.total_market_cap?.brl) || 0 },
+      total_volume: { brl: Number(data.data.total_volume?.brl) || 0 },
+      market_cap_percentage: { btc: Number(data.data.market_cap_percentage?.btc) || 0 }
     };
+    totalMarketCap = result.total_market_cap.brl;
+    console.log(`GlobalData carregado: total_market_cap=${result.total_market_cap.brl}, volume=${result.total_volume.brl}, btc_dominance=${result.market_cap_percentage.btc}%`);
+    return result;
   } catch (err) {
     console.error('Erro Global:', err.message);
-    totalMarketCap = mockGlobalData.total_market_cap.brl;
-    return mockGlobalData;
+    throw err; // Propaga o erro para ser tratado pelo chamador
   }
+}
+
+async function updateMarketStats(data = globalData, isCached = false) {
+  const stats = document.getElementById('market-stats');
+  stats.classList.add('loading');
+  const lang = localStorage.getItem('language') || 'pt';
+
+  if (!data) {
+    console.warn('Nenhum dado global disponível, usando mockGlobalData');
+    data = mockGlobalData;
+  }
+
+  console.log(`Atualizando market-stats: total_market_cap=${data.total_market_cap.brl}, volume=${data.total_volume.brl}, btc_dominance=${data.market_cap_percentage.btc}, isCached=${isCached}`);
+
+  document.getElementById('total-market-cap').textContent = data.total_market_cap.brl ?
+    `R$ ${Number(data.total_market_cap.brl).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}` : translations[lang].not_available;
+  document.getElementById('volume-24h').textContent = data.total_volume.brl ?
+    `R$ ${Number(data.total_volume.brl).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}` : translations[lang].not_available;
+  document.getElementById('btc-dominance').textContent = data.market_cap_percentage.btc ?
+    `${Number(data.market_cap_percentage.btc).toFixed(2)}%` : translations[lang].not_available;
+
+  const cacheIndicator = document.getElementById('cache-indicator');
+  if (cacheIndicator) {
+    cacheIndicator.textContent = isCached ? translations[lang].cached_data : translations[lang].api_error;
+    cacheIndicator.style.display = isCached ? 'inline' : 'inline';
+    setTimeout(() => cacheIndicator.style.display = 'none', 3000);
+  }
+
+  stats.classList.remove('loading');
 }
 
 function changeLanguage(lang) {
@@ -397,40 +505,84 @@ function toggleDropdown() {
   dropdown.classList.toggle('active');
 }
 
-async function updateMarketStats() {
-  const stats = document.getElementById('market-stats');
-  stats.classList.add('loading');
-  const globalData = await fetchCgGlobalData();
-  stats.classList.remove('loading');
-  document.getElementById('total-market-cap').textContent = globalData.total_market_cap ?
-    `R$ ${globalData.total_market_cap.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}` : translations[localStorage.getItem('language') || 'pt'].not_available;
-  document.getElementById('volume-24h').textContent = globalData.total_volume_24h ?
-    `R$ ${globalData.total_volume_24h.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}` : translations[localStorage.getItem('language') || 'pt'].not_available;
-  document.getElementById('btc-dominance').textContent = globalData.btc_dominance ?
-    `${globalData.btc_dominance.toFixed(2)}%` : translations[localStorage.getItem('language') || 'pt'].not_available;
-}
-
 async function fetchCryptoData() {
   const table = document.getElementById('crypto-table');
   table.classList.add('loading');
+  const stats = document.getElementById('market-stats');
+  stats.classList.add('loading');
+  console.log('Iniciando fetchCryptoData...');
+
   try {
+    // Buscar lista de moedas
+    console.log('Carregando lista de moedas...');
     await fetchCoinsList();
-    await updateMarketStats(); // Carrega totalMarketCap primeiro
-    cryptoData = await fetchCgMarkets();
-    filteredData = cryptoData.slice(0, 10); // Top 10
-    renderTable(filteredData);
+    console.log(`allCoinsList: ${allCoinsList.length} moedas`);
+
+    // Buscar dados globais
+    console.log('Buscando globalData...');
+    globalData = await fetchCgGlobalData();
+    totalMarketCap = globalData.total_market_cap.brl;
+    console.log(`globalData carregado: totalMarketCap=${totalMarketCap}`);
+
+    // Buscar moedas
+    console.log('Buscando coinsData...');
+    coinsData = await fetchCgMarkets([], currentPage);
+    console.log(`coinsData carregado: ${coinsData.length} moedas`);
+
+    // Salvar no cache
+    saveCachedData(globalData, coinsData);
+
+    // Atualizar UI com dados reais
+    await updateMarketStats(globalData, false);
+    renderTable();
   } catch (err) {
-    console.warn('Usando dados de teste devido a falha na API');
-    cryptoData = mockData;
-    filteredData = mockData.slice(0, 10);
-    totalMarketCap = mockGlobalData.total_market_cap.brl;
-    document.querySelector("#crypto-table tbody").innerHTML =
-      `<tr><td colspan="5" class="error-message" data-i18n="error_loading">Erro ao carregar dados. Usando dados de teste.</td></tr>`;
-    renderTable(filteredData);
-    await updateMarketStats();
+    console.error('Erro em fetchCryptoData:', err.message);
+    const { globalData: cachedGlobal, coinsData: cachedCoins } = loadCachedData();
+    
+    if (cachedGlobal && cachedCoins) {
+      // Usar cache se disponível
+      globalData = cachedGlobal;
+      coinsData = cachedCoins;
+      totalMarketCap = globalData.total_market_cap.brl;
+      console.log(`Usando dados em cache: totalMarketCap=${totalMarketCap}, ${coinsData.length} moedas`);
+      await updateMarketStats(globalData, true);
+      renderTable();
+    } else {
+      // Último recurso: mock data
+      globalData = mockGlobalData;
+      coinsData = mockData;
+      totalMarketCap = mockGlobalData.total_market_cap.brl;
+      console.log(`Usando mockData: totalMarketCap=${totalMarketCap}, ${coinsData.length} moedas`);
+      document.querySelector("#crypto-table tbody").innerHTML =
+        `<tr><td colspan="5" class="error-message" data-i18n="error_loading">${translations[localStorage.getItem('language') || 'pt'].error_loading}</td></tr>`;
+      await updateMarketStats(globalData, false);
+      renderTable();
+    }
   } finally {
     table.classList.remove('loading');
+    stats.classList.remove('loading');
   }
+}
+
+function getFilteredData() {
+  const searchValue = sanitizeInput(document.getElementById("search-input").value.toLowerCase());
+  const category = document.getElementById("category-filter").value;
+
+  console.log(`Filtrando dados: search="${searchValue}", category="${category}"`);
+
+  let filtered = coinsData;
+  if (searchValue) {
+    filtered = filtered.filter(coin =>
+      coin.name.toLowerCase().includes(searchValue) ||
+      coin.symbol.toLowerCase().includes(searchValue)
+    );
+  }
+  if (category) {
+    filtered = filtered.filter(coin => (coin.category || '') === category);
+  }
+
+  console.log(`Dados filtrados: ${filtered.length} moedas`);
+  return filtered;
 }
 
 function getPageData(data) {
@@ -449,20 +601,23 @@ function updatePagination(data) {
 }
 
 function changePage(delta) {
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const totalPages = Math.ceil(getFilteredData().length / itemsPerPage);
   currentPage = Math.min(Math.max(1, currentPage + delta), totalPages);
-  renderTable(filteredData);
+  renderTable();
 }
 
-function renderTable(data) {
+function renderTable() {
   const tbody = document.querySelector("#crypto-table tbody");
-  const pageData = getPageData(data);
-  tbody.innerHTML = pageData.length ? '' : `<tr><td colspan="5" class="no-results" data-i18n="no_results">Nenhuma moeda encontrada.</td></tr>`;
+  const filteredData = getFilteredData();
+  const pageData = getPageData(filteredData);
+
+  console.log(`Renderizando tabela: ${pageData.length} moedas na página ${currentPage}`);
+
+  tbody.innerHTML = pageData.length ? '' : `<tr><td colspan="5" class="no-results" data-i18n="no_results">${translations[localStorage.getItem('language') || 'pt'].no_results}</td></tr>`;
   pageData.forEach(coin => {
     const changeClass = (coin.quote.BRL.percent_change_24h || 0) >= 0 ? "positive" : "negative";
-    const dominance = coin.quote.BRL.market_cap_dominance && !isNaN(coin.quote.BRL.market_cap_dominance) ? 
-      `${coin.quote.BRL.market_cap_dominance.toFixed(2)}%` : translations[localStorage.getItem('language') || 'pt'].not_available;
-    console.log(`Renderizando ${coin.name}: Dominância = ${dominance}`);
+    const dominance = formatDominance(coin.quote.BRL.market_cap_dominance);
+    console.log(`Renderizando ${coin.name}: Dominância=${dominance}`);
     tbody.innerHTML += `
       <tr onclick="showModal('${coin.id}', '${coin.slug}')">
         <td>${coin.cmc_rank || translations[localStorage.getItem('language') || 'pt'].not_available}</td>
@@ -473,19 +628,35 @@ function renderTable(data) {
       </tr>
     `;
   });
-  updatePagination(data);
+
+  updatePagination(filteredData);
   changeLanguage(localStorage.getItem('language') || 'pt');
 }
 
 async function filterTable() {
   const searchValue = sanitizeInput(document.getElementById("search-input").value.toLowerCase());
   const category = document.getElementById("category-filter").value;
-  
-  if (!searchValue) {
-    filteredData = cryptoData.slice(0, 10); // Voltar ao top 10 se a busca estiver vazia
-    currentPage = 1;
-    sortTable(sortColumn, false);
+
+  console.log(`Iniciando busca: search="${searchValue}", category="${category}"`);
+
+  if (!searchValue && !category) {
+    console.log('Busca vazia, restaurando top 20');
+    try {
+      coinsData = await fetchCgMarkets();
+      currentPage = 1;
+      saveCachedData(globalData, coinsData);
+      renderTable();
+    } catch (err) {
+      console.error('Erro ao restaurar top 20:', err.message);
+      coinsData = mockData;
+      renderTable();
+    }
     return;
+  }
+
+  if (!allCoinsList.length) {
+    console.warn('allCoinsList vazio, recarregando...');
+    await fetchCoinsList();
   }
 
   const matchedCoins = allCoinsList.filter(coin =>
@@ -493,42 +664,42 @@ async function filterTable() {
     coin.symbol.toLowerCase().includes(searchValue)
   );
 
-  console.log(`Busca: "${searchValue}", categoria: "${category}", moedas encontradas: ${matchedCoins.length}`);
+  console.log(`Moedas encontradas: ${matchedCoins.length}`);
 
   if (matchedCoins.length === 0) {
-    filteredData = [];
-    renderTable(filteredData);
+    coinsData = [];
+    renderTable();
     return;
   }
 
-  const coinIds = matchedCoins.map(coin => coin.id);
-  filteredData = [];
-  let page = 1;
-  const maxPages = Math.ceil(matchedCoins.length / 250);
-
   try {
-    await updateMarketStats(); // Carrega totalMarketCap antes da busca
-    while (page <= maxPages && filteredData.length < matchedCoins.length) {
-      const batchIds = coinIds.slice((page - 1) * 250, page * 250);
-      if (batchIds.length === 0) break;
-      const batchData = await fetchCgMarkets(batchIds, page);
-      filteredData.push(...batchData.filter(coin => 
-        (!category || (coin.category || '') === category)
-      ));
-      page++;
-    }
+    const coinIds = matchedCoins.map(coin => coin.id).slice(0, 250);
+    console.log(`Buscando ${coinIds.length} moedas na API...`);
+    coinsData = await fetchCgMarkets(coinIds);
+    console.log(`Resultados da API: ${coinsData.length} moedas`);
   } catch (err) {
     console.error('Erro ao buscar dados de mercado:', err.message);
-    filteredData = mockData.filter(coin =>
+    const { coinsData: cachedCoins } = loadCachedData();
+    coinsData = cachedCoins && cachedCoins.length > 0 ? cachedCoins.filter(coin =>
+      (coin.name.toLowerCase().includes(searchValue) ||
+       coin.symbol.toLowerCase().includes(searchValue)) &&
+      (!category || (coin.category || '') === category)
+    ) : mockData.filter(coin =>
       (coin.name.toLowerCase().includes(searchValue) ||
        coin.symbol.toLowerCase().includes(searchValue)) &&
       (!category || (coin.category || '') === category)
     );
+    console.log(`Usando ${cachedCoins ? 'cache' : 'mockData'} para busca: ${coinsData.length} moedas`);
   }
 
-  console.log(`Resultados após filtro: ${filteredData.length}`);
+  if (category) {
+    coinsData = coinsData.filter(coin => (coin.category || '') === category);
+    console.log(`Após filtro de categoria: ${coinsData.length} moedas`);
+  }
+
   currentPage = 1;
-  sortTable(sortColumn, false);
+  saveCachedData(globalData, coinsData);
+  renderTable();
 }
 
 function debounceFilter() {
@@ -544,7 +715,7 @@ function sortTable(column, toggle = true) {
     sortDirection = sortColumn === column ? sortDirection * -1 : 1;
     th.classList.add('sorted', sortDirection === -1 ? 'desc' : '');
   }
-  filteredData.sort((a, b) => {
+  coinsData.sort((a, b) => {
     let valueA, valueB;
     switch (column) {
       case 'cmc_rank': valueA = a.cmc_rank || Infinity; valueB = b.cmc_rank || Infinity; break;
@@ -555,19 +726,21 @@ function sortTable(column, toggle = true) {
     }
     return typeof valueA === 'string' ? sortDirection * valueA.localeCompare(valueB) : sortDirection * (valueA - valueB);
   });
-  renderTable(filteredData);
+  renderTable();
 }
 
 async function showModal(coinId, coinSlug) {
-  const coin = filteredData.find(c => c.id === coinId) || cryptoData.find(c => c.id === coinId);
-  if (!coin) return;
+  const coin = coinsData.find(c => c.id === coinId);
+  if (!coin) {
+    console.error(`Moeda ${coinId} não encontrada`);
+    return;
+  }
   const lang = localStorage.getItem('language') || 'pt';
   document.getElementById('modal-title').textContent = `${coin.name} (${coin.symbol})`;
   document.getElementById('modal-price').textContent = `${translations[lang].price_label}${formatPrice(coin.quote.BRL.price)}`;
   document.getElementById('modal-market-cap').textContent = `${translations[lang].market_cap_label}${coin.quote.BRL.market_cap ?
     `R$ ${coin.quote.BRL.market_cap.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}` : translations[lang].not_available}`;
-  document.getElementById('modal-dominance').textContent = `${translations[lang].dominance_label}${coin.quote.BRL.market_cap_dominance && !isNaN(coin.quote.BRL.market_cap_dominance) ?
-    `${coin.quote.BRL.market_cap_dominance.toFixed(2)}%` : translations[lang].not_available}`;
+  document.getElementById('modal-dominance').textContent = `${translations[lang].dominance_label}${formatDominance(coin.quote.BRL.market_cap_dominance)}`;
   document.getElementById('modal-website').innerHTML = `${translations[lang].website_label}<a href="https://www.${coin.slug}.org" target="_blank">www.${coin.slug}.org</a>`;
 
   let historicalData = mockHistoricalData;
@@ -576,6 +749,7 @@ async function showModal(coinId, coinSlug) {
     historicalData = await res.json();
     if (!res.ok) throw new Error('Erro ao carregar gráfico');
   } catch (err) {
+    console.error('Erro ao carregar gráfico:', err.message);
     document.getElementById('modal-chart-error').style.display = 'block';
   }
 
@@ -584,7 +758,7 @@ async function showModal(coinId, coinSlug) {
   priceChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: historicalData.prices.map(p => new Date(p[0]).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })),
+      labels: historicalData.prices.map(p => new Date(p[0]).toLocaleDateString(lang === 'pt' ? 'pt-BR' : 'en-US', { day: 'numeric', month: 'short' })),
       datasets: [{
         label: translations[lang].chart_label,
         data: historicalData.prices.map(p => p[1]),
@@ -624,7 +798,33 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('.theme-toggle span').setAttribute('data-i18n', savedTheme === 'dark' ? 'theme_dark' : 'theme_light');
   document.getElementById('language-select').value = savedLang;
   changeLanguage(savedLang);
+
+  // Carregar dados em cache para exibição inicial
+  const { globalData: cachedGlobal, coinsData: cachedCoins } = loadCachedData();
+  if (cachedGlobal && cachedCoins) {
+    globalData = cachedGlobal;
+    coinsData = cachedCoins;
+    totalMarketCap = globalData.total_market_cap.brl;
+    console.log(`Exibindo dados em cache inicialmente: totalMarketCap=${totalMarketCap}, ${coinsData.length} moedas`);
+    updateMarketStats(globalData, true);
+    renderTable();
+  } else {
+    globalData = mockGlobalData;
+    coinsData = mockData;
+    totalMarketCap = mockGlobalData.total_market_cap.brl;
+    console.log(`Exibindo mockData inicialmente: totalMarketCap=${totalMarketCap}, ${coinsData.length} moedas`);
+    updateMarketStats(globalData, false);
+    renderTable();
+  }
+
+  // Buscar dados reais imediatamente
   fetchCryptoData();
+
+  // Configurar atualização periódica
+  setInterval(() => {
+    console.log('Iniciando atualização automática...');
+    fetchCryptoData();
+  }, UPDATE_INTERVAL);
 });
 
 document.addEventListener('click', e => {
