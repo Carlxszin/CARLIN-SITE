@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title data-i18n="title">CryptoPulse</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --bg-color: #0e0e10;
@@ -133,21 +133,17 @@
       position: relative;
     }
     .market-stats.loading::before {
-      content: attr(data-loading-text, 'Carregando dados reais...');
+      content: '';
       position: absolute;
       top: 50%;
       left: 50%;
+      width: 30px;
+      height: 30px;
+      border: 3px solid var(--accent-color);
+      border-top: 3px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
       transform: translate(-50%, -50%);
-      color: var(--accent-color);
-      font-size: 0.9rem;
-      font-weight: 600;
-      z-index: 10;
-      width: 100%;
-      text-align: center;
-    }
-    .market-stats.loading p {
-      opacity: 0;
-      transition: opacity 0.3s;
     }
     .stat-card {
       padding: 10px;
@@ -222,21 +218,17 @@
       position: relative;
     }
     table.loading::before {
-      content: attr(data-loading-text, 'Carregando moedas...');
+      content: '';
       position: absolute;
       top: 50%;
       left: 50%;
+      width: 30px;
+      height: 30px;
+      border: 3px solid var(--accent-color);
+      border-top: 3px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
       transform: translate(-50%, -50%);
-      color: var(--accent-color);
-      font-size: 0.9rem;
-      font-weight: 600;
-      z-index: 10;
-      width: 100%;
-      text-align: center;
-    }
-    table.loading tbody td {
-      opacity: 0;
-      transition: opacity 0.3s;
     }
     th, td {
       padding: 8px 12px;
@@ -248,7 +240,6 @@
       font-weight: 600;
       background: var(--card-hover);
       cursor: pointer;
-      position: relative;
     }
     th:hover { background: #333; }
     th.sorted::after {
@@ -318,12 +309,9 @@
       color: #9ca3af;
       background: var(--card-bg);
     }
-    #cache-indicator {
-      font-size: 0.8rem;
-      color: #9ca3af;
-      margin-left: 1rem;
-      grid-column: span 3;
-      text-align: right;
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
     @media (max-width: 768px) {
       header { padding: 6px 12px; }
@@ -334,7 +322,6 @@
       .search-bar { max-width: 95%; }
       th, td { font-size: 0.8rem; padding: 6px 8px; }
       .modal-content { padding: 12px; }
-      #cache-indicator { grid-column: span 1; text-align: center; }
     }
   </style>
 </head>
@@ -361,14 +348,14 @@
       </span>
     </div>
     <div class="dropdown" id="crypto-links">
-      <a href="#" data-i18n="portfolio">Portfolio Pessoal</a>
-      <a href="#" data-i18n="trackers">Rastreador & Exploradores</a>
-      <a href="#" data-i18n="settings">Configurações</a>
+      <a href="portfolio.html" data-i18n="portfolio">Portfolio Pessoal</a>
+      <a href="tools.html" data-i18n="trackers">Rastreador & Exploradores</a>
+      <a href="settings.html" data-i18n="settings">Configurações</a>
     </div>
   </header>
   <div class="market-section">
     <h2 data-i18n="market_title">Mercado de Criptomoedas</h2>
-    <div class="market-stats loading" id="market-stats" data-loading-text="Carregando dados reais...">
+    <div class="market-stats loading" id="market-stats">
       <div class="stat-card">
         <h3 data-i18n="total_market_cap">Capitalização Total</h3>
         <p id="total-market-cap">Carregando...</p>
@@ -403,7 +390,7 @@
       <span class="page-info" id="page-info" data-i18n="page">Página 1</span>
       <button onclick="changePage(1)" id="next-page" data-i18n="next">Próximo</button>
     </div>
-    <table id="crypto-table" class="loading" data-loading-text="Carregando moedas...">
+    <table id="crypto-table" class="loading">
       <thead>
         <tr>
           <th onclick="sortTable('cmc_rank')" data-i18n="rank">#</th>
@@ -433,4 +420,4 @@
   </footer>
   <script src="app.js"></script>
 </body>
-                                                                  </html>
+</html>
