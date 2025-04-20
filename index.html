@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="title">CryptoPulse</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-color: #0e0e10;
+      --text-color: #f0f0f0;
+      --card-bg: #1f1f23;
+      --card-hover: #27272a;
+      --primary-color: #3b82f6;
+      --accent-color: #93c5fd;
+      --positive-color: #22c55e;
+      --negative-color: #ef4444;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    [data-theme="light"] {
+      --bg-color: #f3f4f6;
+      --text-color: #1f2937;
+      --card-bg: #ffffff;
+      --card-hover: #f9fafb;
+      --primary-color: #2563eb;
+      --accent-color: #60a5fa;
+      --positive-color: #16a34a;
+      --negative-color: #dc2626;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+    }
+    header {
+      background: var(--primary-color);
+      padding: 8px 16px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .menu-icon, .theme-toggle, .language-selector {
+      cursor: pointer;
+      color: #fff;
+      padding: 6px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      transition: background 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .menu-icon:hover, .theme-toggle:hover, .language-selector:hover { background: rgba(0, 0, 0, 0.5); }
+    .menu-icon svg, .theme-toggle svg, .language-selector svg { width: 18px; height: 18px; }
+    .language-selector select {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 56px;
+      right: 16px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      min-width: 200px;
+      padding: 8px 0;
+    }
+    .dropdown.active {
+      display: block;
+    }
+    .dropdown a {
+      display: block;
+      padding: 8px 16px;
+      color: var(--text-color);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .dropdown a:hover { background: var(--card-hover); color: var(--accent-color); }
+    .market-section {
+      max-width: 960px;
+      margin: 16px auto;
+      padding: 0 12px;
+      text-align: center;
+    }
+    .market-section h2 {
+      font-size: 1.2rem;
+      color: var(--accent-color);
+      margin-bottom: 16px;
+    }
+    .filter-controls select {
+      padding: 8px;
+      background: var(--card-bg);
+      border: none;
+      border-radius: 6px;
+      color: var(--text-color);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .market-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .market-stats.loading::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 30px;
+      height: 30px;
+      border: 3px solid var(--accent-color);
+      border-top: 3px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      transform: translate(-50%, -50%);
+    }
+    .stat-card {
+      padding: 10px;
+      background: var(--card-hover);
+      border-radius: 6px;
+    }
+    .stat-card h3 { font-size: 0.8rem; color: #9ca3af; margin-bottom: 6px; }
+    .stat-card p { font-size: 0.95rem; font-weight: 600; }
+    .search-bar {
+      margin: 16px auto;
+      display: flex;
+      max-width: 600px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .search-bar input {
+      padding: 8px 8px 8px 32px;
+      font-size: 0.9rem;
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--text-color);
+    }
+    .search-bar input:focus { outline: none; }
+    .search-bar svg {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      fill: #9ca3af;
+    }
+    .search-bar button {
+      padding: 8px 16px;
+      background: var(--primary-color);
+      border: none;
+      border-radius: 0 8px 8px 0;
+      color: #fff;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .search-bar button:hover { background: #2563eb; }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .pagination button {
+      padding: 6px 12px;
+      background: var(--card-bg);
+      color: var(--text-color);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .pagination button:hover { background: var(--primary-color); }
+    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pagination .page-info { font-size: 0.85rem; color: #9ca3af; }
+    table {
+      width: 100%;
+      max-width: 960px;
+      margin: 12px auto;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    table.loading::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 30px;
+      height: 30px;
+      border: 3px solid var(--accent-color);
+      border-top: 3px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      transform: translate(-50%, -50%);
+    }
+    th, td {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    th {
+      color: var(--accent-color);
+      font-weight: 600;
+      background: var(--card-hover);
+      cursor: pointer;
+    }
+    th:hover { background: #333; }
+    th.sorted::after {
+      content: '↑';
+      position: absolute;
+      right: 8px;
+      font-size: 0.8rem;
+    }
+    th.sorted.desc::after { content: '↓'; }
+    tbody tr {
+      border-bottom: 1px solid #2d2d31;
+    }
+    tbody tr:hover {
+      background: var(--card-hover);
+      cursor: pointer;
+    }
+    .positive { color: var(--positive-color); }
+    .negative { color: var(--negative-color); }
+    .coin-icon { width: 20px; height: 20px; vertical-align: middle; margin-right: 6px; }
+    .no-results, .error-message {
+      text-align: center;
+      padding: 16px;
+      color: #9ca3af;
+      font-size: 0.85rem;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      padding: 16px;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: var(--shadow);
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-content h2 { font-size: 1.2rem; margin-bottom: 12px; }
+    .modal-content p { font-size: 0.9rem; color: #d1d5db; margin-bottom: 8px; }
+    .modal-content a { color: var(--accent-color); text-decoration: none; }
+    .modal-content a:hover { text-decoration: underline; }
+    .modal-chart { margin-top: 16px; max-height: 200px; background: #18181b; padding: 12px; border-radius: 6px; }
+    .modal-chart-error { color: #9ca3af; text-align: center; margin-top: 8px; font-size: 0.8rem; }
+    .close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #9ca3af;
+    }
+    .close:hover { color: var(--text-color); }
+    footer {
+      text-align: center;
+      padding: 12px;
+      font-size: 0.8rem;
+      color: #9ca3af;
+      background: var(--card-bg);
+    }
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    @media (max-width: 768px) {
+      header { padding: 6px 12px; }
+      header h1 { font-size: 1.3rem; }
+      .dropdown { top: 50px; min-width: 180px; }
+      .market-section { padding: 0 10px; }
+      .market-stats { grid-template-columns: 1fr; }
+      .search-bar { max-width: 95%; }
+      th, td { font-size: 0.8rem; padding: 6px 8px; }
+      .modal-content { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 data-i18n="title">CryptoPulse</h1>
+    <div class="controls">
+      <span class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <span data-i18n="theme_dark">Tema Escuro</span>
+      </span>
+      <span class="language-selector" aria-label="Selecionar idioma">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+        <select id="language-select" onchange="changeLanguage(this.value)">
+          <option value="pt">Português</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+        </select>
+      </span>
+      <span class="menu-icon" onclick="toggleDropdown()" aria-label="Abrir menu">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </span>
+    </div>
+    <div class="dropdown" id="crypto-links">
+      <a href="portfolio.html" data-i18n="portfolio">Portfolio Pessoal</a>
+      <a href="tools.html" data-i18n="trackers">Rastreador & Exploradores</a>
+      <a href="settings.html" data-i18n="settings">Configurações</a>
+    </div>
+  </header>
+  <div class="market-section">
+    <h2 data-i18n="market_title">Mercado de Criptomoedas</h2>
+    <div class="market-stats loading" id="market-stats">
+      <div class="stat-card">
+        <h3 data-i18n="total_market_cap">Capitalização Total</h3>
+        <p id="total-market-cap">Carregando...</p>
+      </div>
+      <div class="stat-card">
+        <h3 data-i18n="volume_24h">Volume 24h</h3>
+        <p id="volume-24h">Carregando...</p>
+      </div>
+      <div class="stat-card">
+        <h3 data-i18n="btc_dominance">Dominância do Bitcoin</h3>
+        <p id="btc-dominance">Carregando...</p>
+      </div>
+    </div>
+    <div class="filter-controls">
+      <select id="category-filter" onchange="filterTable()">
+        <option value="" data-i18n="all_categories">Todas as Categorias</option>
+        <option value="defi" data-i18n="defi">DeFi</option>
+        <option value="meme" data-i18n="meme">Meme Coins</option>
+        <option value="stablecoin" data-i18n="stablecoin">Stablecoins</option>
+      </select>
+    </div>
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <input type="text" id="search-input" data-i18n-placeholder="search_placeholder" placeholder="Pesquisar por nome ou símbolo..." oninput="debounceFilter()">
+      <button onclick="filterTable()" data-i18n="search_button">Buscar</button>
+    </div>
+    <div class="pagination" id="pagination">
+      <button onclick="changePage(-1)" id="prev-page" disabled data-i18n="previous">Anterior</button>
+      <span class="page-info" id="page-info" data-i18n="page">Página 1</span>
+      <button onclick="changePage(1)" id="next-page" data-i18n="next">Próximo</button>
+    </div>
+    <table id="crypto-table" class="loading">
+      <thead>
+        <tr>
+          <th onclick="sortTable('cmc_rank')" data-i18n="rank">#</th>
+          <th onclick="sortTable('name')" data-i18n="coin">Moeda</th>
+          <th onclick="sortTable('price')" data-i18n="price">Preço (24h)</th>
+          <th onclick="sortTable('market_cap')" data-i18n="market_cap">Market Cap</th>
+          <th onclick="sortTable('market_cap_dominance')" data-i18n="dominance">Dominância</th>
+        </tr>
+      </thead>
+      <tbody><tr><td colspan="5" data-i18n="loading">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()" aria-label="Fechar modal">×</span>
+      <h2 id="modal-title"></h2>
+      <p id="modal-price" data-i18n-prefix="price_label">Preço: </p>
+      <p id="modal-market-cap" data-i18n-prefix="market_cap_label">Market Cap: </p>
+      <p id="modal-dominance" data-i18n-prefix="dominance_label">Dominância: </p>
+      <p id="modal-website" data-i18n-prefix="website_label">Website: </p>
+      <canvas id="modal-chart" class="modal-chart"></canvas>
+      <p id="modal-chart-error" class="modal-chart-error" style="display: none;" data-i18n="chart_error">Erro ao carregar gráfico</p>
+    </div>
+  </div>
+  <footer>
+    <span data-i18n="footer">© 2025 CryptoPulse | Dados: CoinMarketCap, CoinGecko</span>
+  </footer>
+  <script>
+    // Traduções (integradas do i18n.js)
+    const translations = {
+      pt: {
+        title: "CryptoPulse",
+        theme_dark: "Tema Escuro",
+        theme_light: "Tema Claro",
+        portfolio: "Portfolio Pessoal",
+        trackers: "Rastreador & Exploradores",
+        settings: "Configurações",
+        market_title: "Mercado de Criptomoedas",
+        search_placeholder: "Pesquisar por nome ou símbolo...",
+        search_button: "Buscar",
+        previous: "Anterior",
+        next: "Próximo",
+        page: "Página {0}",
+        rank: "#",
+        coin: "Moeda",
+        price: "Preço (24h)",
+        market_cap: "Market Cap",
+        dominance: "Dominância",
+        loading: "Carregando...",
+        price_label: "Preço: ",
+        market_cap_label: "Market Cap: ",
+        dominance_label: "Dominância: ",
+        website_label: "Website: ",
+        chart_error: "Erro ao carregar gráfico",
+        chart_label: "Preço (BRL) - Últimos 7 Dias",
+        footer: "© 2025 CryptoPulse | Dados: CoinMarketCap, CoinGecko",
+        not_available: "Não disponível",
+        modal_error: "Erro ao carregar detalhes da moeda",
+        total_market_cap: "Capitalização Total",
+        volume_24h: "Volume 24h",
+        btc_dominance: "Dominância do Bitcoin",
+        no_results: "Nenhuma moeda encontrada",
+        error_loading: "Erro ao carregar dados",
+        all_categories: "Todas as Categorias",
+        defi: "DeFi",
+        meme: "Meme Coins",
+        stablecoin: "Stablecoins"
+      },
+      en: {
+        title: "CryptoPulse",
+        theme_dark: "Dark Theme",
+        theme_light: "Light Theme",
+        portfolio: "Personal Portfolio",
+        trackers: "Trackers & Explorers",
+        settings: "Settings",
+        market_title: "Cryptocurrency Market",
+        search_placeholder: "Search by name or symbol...",
+        search_button: "Search",
+        previous: "Previous",
+        next: "Next",
+        page: "Page {0}",
+        rank: "#",
+        coin: "Coin",
+        price: "Price (24h)",
+        market_cap: "Market Cap",
+        dominance: "Dominance",
+        loading: "Loading...",
+        price_label: "Price: ",
+        market_cap_label: "Market Cap: ",
+        dominance_label: "Dominance: ",
+        website_label: "Website: ",
+        chart_error: "Error loading chart",
+        chart_label: "Price (BRL) - Last 7 Days",
+        footer: "© 2025 CryptoPulse | Data: CoinMarketCap, CoinGecko",
+        not_available: "Not available",
+        modal_error: "Error loading coin details",
+        total_market_cap: "Total Market Cap",
+        volume_24h: "24h Volume",
+        btc_dominance: "Bitcoin Dominance",
+        no_results: "No coins found",
+        error_loading: "Error loading data",
+        all_categories: "All Categories",
+        defi: "DeFi",
+        meme: "Meme Coins",
+        stablecoin: "Stablecoins"
+      },
+      es: {
+        title: "CryptoPulse",
+        theme_dark: "Tema Oscuro",
+        theme_light: "Tema Claro",
+        portfolio: "Portafolio Personal",
+        trackers: "Rastreadores y Exploradores",
+        settings: "Configuraciones",
+        market_title: "Mercado de Criptomonedas",
+        search_placeholder: "Buscar por nombre o símbolo...",
+        search_button: "Buscar",
+        previous: "Anterior",
+        next: "Siguiente",
+        page: "Página {0}",
+        rank: "#",
+        coin: "Moneda",
+        price: "Precio (24h)",
+        market_cap: "Capitalización de Mercado",
+        dominance: "Dominancia",
+        loading: "Cargando...",
+        price_label: "Precio: ",
+        market_cap_label: "Capitalización de Mercado: ",
+        dominance_label: "Dominancia: ",
+        website_label: "Sitio Web: ",
+        chart_error: "Error al cargar el gráfico",
+        chart_label: "Precio (BRL) - Últimos 7 Días",
+        footer: "© 2025 CryptoPulse | Datos: CoinMarketCap, CoinGecko",
+        not_available: "No disponible",
+        modal_error: "Error al cargar detalles de la moneda",
+        total_market_cap: "Capitalización Total",
+        volume_24h: "Volumen 24h",
+        btc_dominance: "Dominancia de Bitcoin",
+        no_results: "No se encontraron monedas",
+        error_loading: "Error al cargar datos",
+        all_categories: "Todas las Categorías",
+        defi: "DeFi",
+        meme: "Monedas Meme",
+        stablecoin: "Stablecoins"
+      },
+      fr: {
+        title: "CryptoPulse",
+        theme_dark: "Thème Sombre",
+        theme_light: "Thème Clair",
+        portfolio: "Portefeuille Personnel",
+        trackers: "Traqueurs & Explorateurs",
+        settings: "Paramètres",
+        market_title: "Marché des Cryptomonnaies",
+        search_placeholder: "Rechercher par nom ou symbole...",
+        search_button: "Rechercher",
+        previous: "Précédent",
+        next: "Suivant",
+        page: "Page {0}",
+        rank: "#",
+        coin: "Monnaie",
+        price: "Prix (24h)",
+        market_cap: "Capitalisation Boursière",
+        dominance: "Dominance",
+        loading: "Chargement...",
+        price_label: "Prix : ",
+        market_cap_label: "Capitalisation Boursière : ",
+        dominance_label: "Dominance : ",
+        website_label: "Site Web : ",
+        chart_error: "Erreur lors du chargement du graphique",
+        chart_label: "Prix (BRL) - 7 Derniers Jours",
+        footer: "© 2025 CryptoPulse | Données : CoinMarketCap, CoinGecko",
+        not_available: "Non disponible",
+        modal_error: "Erreur lors du chargement des détails de la monnaie",
+        total_market_cap: "Capitalisation Totale",
+        volume_24h: "Volume 24h",
+        btc_dominance: "Dominance de Bitcoin",
+        no_results: "Aucune monnaie trouvée",
+        error_loading: "Erreur lors du chargement des données",
+        all_categories: "Toutes les Catégories",
+        defi: "DeFi",
+        meme: "Monnaies Mème",
+        stablecoin: "Stablecoins"
+      },
+      de: {
+        title: "CryptoPulse",
+        theme_dark: "Dunkles Thema",
+        theme_light: "Helles Thema",
+        portfolio: "Persönliches Portfolio",
+        trackers: "Tracker & Explorer",
+        settings: "Einstellungen",
+        market_title: "Kryptowährungsmarkt",
+        search_placeholder: "Nach Name oder Symbol suchen...",
+        search_button: "Suchen",
+        previous: "Zurück",
+        next: "Weiter",
+        page: "Seite {0}",
+        rank: "#",
+        coin: "Münze",
+        price: "Preis (24h)",
+        market_cap: "Marktkapitalisierung",
+        dominance: "Dominanz",
+        loading: "Laden...",
+        price_label: "Preis: ",
+        market_cap_label: "Marktkapitalisierung: ",
+        dominance_label: "Dominanz: ",
+        website_label: "Website: ",
+        chart_error: "Fehler beim Laden des Diagramms",
+        chart_label: "Preis (BRL) - Letzte 7 Tage",
+        footer: "© 2025 CryptoPulse | Daten: CoinMarketCap, CoinGecko",
+        not_available: "Nicht verfügbar",
+        modal_error: "Fehler beim Laden der Münzdetails",
+        total_market_cap: "Gesamtmarktkapitalisierung",
+        volume_24h: "24h-Volumen",
+        btc_dominance: "Bitcoin-Dominanz",
+        no_results: "Keine Münzen gefunden",
+        error_loading: "Fehler beim Laden der Daten",
+        all_categories: "Alle Kategorien",
+        defi: "DeFi",
+        meme: "Meme-Münzen",
+        stablecoin: "Stablecoins"
+      }
+    };
+
+    function changeLanguage(lang) {
+      localStorage.setItem('language', lang);
+      const translation = translations[lang] || translations.pt;
+
+      document.querySelectorAll('[data-i18n]').forEach(elem => {
+        const key = elem.getAttribute('data-i18n');
+        if (translation[key]) elem.textContent = translation[key];
+      });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(elem => {
+        const key = elem.getAttribute('data-i18n-placeholder');
+        if (translation[key]) elem.placeholder = translation[key];
+      });
+
+      document.querySelectorAll('[data-i18n-prefix]').forEach(elem => {
+        const key = elem.getAttribute('data-i18n-prefix');
+        const currentText = elem.textContent.split(': ').slice(1).join(': ');
+        if (translation[key]) elem.textContent = translation[key] + currentText;
+      });
+
+      const pageInfo = document.getElementById('page-info');
+      if (pageInfo && filteredData) {
+        const totalPages = Math.ceil(filteredData.length / 20) || 1;
+        pageInfo.textContent = translation.page.replace('{0}', `${currentPage || 1} de ${totalPages}`);
+      }
+    }
+
+    // Configurações da API
+    const cmcApiKey = "9e0ef985-caf5-43d3-90e0-a73304b5546e";
+    const cmcApiUrl = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=100&convert=BRL';
+    const cmcGlobalUrl = 'https://pro-api.coinmarketcap.com/v1/global-metrics/quotes/latest?convert=BRL';
+    const cgApiUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=brl&per_page=100&page=1';
+    let cryptoData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    const itemsPerPage = 20;
+    let sortColumn = 'cmc_rank';
+    let sortDirection = 1;
+    let priceChart = null;
+    let debounceTimeout;
+
+    // Dados de teste robustos
+    const mockData = [
+      { id: "coinmarketcap-1", name: "Bitcoin", symbol: "BTC", slug: "bitcoin", cmc_rank: 1, quote: { BRL: { price: 350000, percent_change_24h: 2.5, market_cap: 7000000000000, market_cap_dominance: 50 } }, category: '' },
+      { id: "coinmarketcap-1027", name: "Ethereum", symbol: "ETH", slug: "ethereum", cmc_rank: 2, quote: { BRL: { price: 15000, percent_change_24h: -1.2, market_cap: 1800000000000, market_cap_dominance: 20 } }, category: 'defi' },
+      { id: "coinmarketcap-9999", name: "Shiba Inu", symbol: "SHIB", slug: "shiba-inu", cmc_rank: 3, quote: { BRL: { price: 0.00012345, percent_change_24h: 1.5, market_cap: 72000000000, market_cap_dominance: 0.5 } }, category: 'meme' },
+      { id: "coinmarketcap-9998", name: "Tether", symbol: "USDT", slug: "tether", cmc_rank: 4, quote: { BRL: { price: 5.5, percent_change_24h: 0.1, market_cap: 150000000000, market_cap_dominance: 1.2 } }, category: 'stablecoin' }
+    ];
+
+    const mockGlobalData = {
+      total_market_cap: 9000000000000,
+      total_volume_24h: 500000000000,
+      btc_dominance: 50
+    };
+
+    const mockHistoricalData = {
+      prices: Array.from({ length: 7 }, (_, i) => [Date.now() - (6 - i) * 24 * 60 * 60 * 1000, 340000 + i * 2000])
+    };
+
+    function sanitizeInput(input) {
+      return input.replace(/[<>]/g, '');
+    }
+
+    function formatPrice(price) {
+      if (!price || isNaN(price)) return 'N/A';
+      return `R$ ${price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`;
+    }
+
+    async function fetchCmcData() {
+      try {
+        const res = await fetch(cmcApiUrl, { headers: { "X-CMC_PRO_API_KEY": cmcApiKey } });
+        if (!res.ok) throw new Error('Erro na API CoinMarketCap');
+        const data = await res.json();
+        if (data.status.error_code !== 0) throw new Error(data.status.error_message);
+        return data.data.map(coin => ({
+          id: `coinmarketcap-${coin.id}`,
+          name: coin.name,
+          symbol: coin.symbol,
+          slug: coin.slug,
+          cmc_rank: coin.cmc_rank || Infinity,
+          quote: coin.quote || { BRL: { price: 0, percent_change_24h: 0, market_cap: 0, market_cap_dominance: 0 } },
+          category: coin.tags?.includes('defi') ? 'defi' : 
+                    coin.tags?.includes('meme-token') ? 'meme' : 
+                    coin.tags?.includes('stablecoin') ? 'stablecoin' : ''
+        }));
+      } catch (err) {
+        console.error('Erro CoinMarketCap:', err.message);
+        throw err;
+      }
+    }
+
+    async function fetchCmcGlobalData() {
+      try {
+        const res = await fetch(cmcGlobalUrl, { headers: { "X-CMC_PRO_API_KEY": cmcApiKey } });
+        if (!res.ok) throw new Error('Erro na API CoinMarketCap Global');
+        const data = await res.json();
+        if (data.status.error_code !== 0) throw new Error(data.status.error_message);
+        return {
+          total_market_cap: data.data.quote.BRL.total_market_cap || 0,
+          total_volume_24h: data.data.quote.BRL.total_volume_24h || 0,
+          btc_dominance: data.data.quote.BRL.bitcoin_dominance || 0
+        };
+      } catch (err) {
+        console.error('Erro Global:', err.message);
+        return mockGlobalData;
+      }
+    }
+
+    async function fetchCgData() {
+      try {
+        const res = await fetch(cgApiUrl);
+        if (!res.ok) throw new Error('Erro na API CoinGecko');
+        const data = await res.json();
+        return data.map(coin => ({
+          id: `coingecko-${coin.id}`,
+          name: coin.name,
+          symbol: coin.symbol.toUpperCase(),
+          slug: coin.id,
+          cmc_rank: coin.market_cap_rank || Infinity,
+          quote: {
+            BRL: {
+              price: coin.current_price || 0,
+              percent_change_24h: coin.price_change_percentage_24h || 0,
+              market_cap: coin.market_cap || 0,
+              market_cap_dominance: coin.market_cap && coin.total_market_cap ? (coin.market_cap / coin.total_market_cap) * 100 : 0
+            }
+          },
+          category: coin.categories?.some(cat => cat.toLowerCase().includes('defi')) ? 'defi' :
+                    coin.categories?.some(cat => cat.toLowerCase().includes('meme')) ? 'meme' :
+                    coin.categories?.some(cat => cat.toLowerCase().includes('stablecoin')) ? 'stablecoin' : ''
+        }));
+      } catch (err) {
+        console.error('Erro CoinGecko:', err.message);
+        throw err;
+      }
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.body.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      const themeSpan = document.querySelector('.theme-toggle span');
+      themeSpan.setAttribute('data-i18n', newTheme === 'dark' ? 'theme_dark' : 'theme_light');
+      changeLanguage(localStorage.getItem('language') || 'pt');
+    }
+
+    function toggleDropdown() {
+      const dropdown = document.getElementById('crypto-links');
+      dropdown.classList.toggle('active');
+    }
+
+    async function updateMarketStats() {
+      const stats = document.getElementById('market-stats');
+      stats.classList.add('loading');
+      const globalData = await fetchCmcGlobalData();
+      stats.classList.remove('loading');
+      document.getElementById('total-market-cap').textContent = globalData.total_market_cap ?
+        `R$ ${globalData.total_market_cap.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}` : 'N/A';
+      document.getElementById('volume-24h').textContent = globalData.total_volume_24h ?
+        `R$ ${globalData.total_volume_24h.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}` : 'N/A';
+      document.getElementById('btc-dominance').textContent = globalData.btc_dominance ?
+        `${globalData.btc_dominance.toFixed(2)}%` : 'N/A';
+    }
+
+    async function fetchCryptoData() {
+      const table = document.getElementById('crypto-table');
+      table.classList.add('loading');
+      try {
+        cryptoData = await fetchCmcData();
+        filteredData = cryptoData;
+        await updateMarketStats();
+        renderTable(getPageData());
+      } catch (err) {
+        try {
+          cryptoData = await fetchCgData();
+          filteredData = cryptoData;
+          await updateMarketStats();
+          renderTable(getPageData());
+        } catch (cgErr) {
+          console.warn('Usando dados de teste devido a falhas nas APIs');
+          cryptoData = mockData;
+          filteredData = mockData;
+          document.querySelector("#crypto-table tbody").innerHTML =
+            `<tr><td colspan="5" class="error-message" data-i18n="error_loading">Erro ao carregar dados. Usando dados de teste.</td></tr>`;
+          renderTable(getPageData());
+          await updateMarketStats();
+        }
+      } finally {
+        table.classList.remove('loading');
+        updatePagination();
+      }
+    }
+
+    function getPageData() {
+      const start = (currentPage - 1) * itemsPerPage;
+      return filteredData.slice(start, start + itemsPerPage);
+    }
+
+    function updatePagination() {
+      const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
+      document.getElementById('prev-page').disabled = currentPage === 1;
+      document.getElementById('next-page').disabled = currentPage === totalPages;
+      const lang = localStorage.getItem('language') || 'pt';
+      document.getElementById('page-info').textContent = translations[lang].page.replace('{0}', `${currentPage} de ${totalPages}`);
+    }
+
+    function changePage(delta) {
+      currentPage += delta;
+      if (currentPage < 1) currentPage = 1;
+      renderTable(getPageData());
+      updatePagination();
+    }
+
+    function renderTable(data) {
+      const tbody = document.querySelector("#crypto-table tbody");
+      tbody.innerHTML = data.length ? '' : `<tr><td colspan="5" class="no-results" data-i18n="no_results">Nenhuma moeda encontrada.</td></tr>`;
+      data.forEach(coin => {
+        const changeClass = (coin.quote.BRL.percent_change_24h || 0) >= 0 ? "positive" : "negative";
+        const iconUrl = coin.id.startsWith('coinmarketcap') ?
+          `https://s2.coinmarketcap.com/static/img/coins/64x64/${coin.id.split('-')[1]}.png` :
+          `https://assets.coingecko.com/coins/images/${coin.id.split('-')[1]}/thumb/${coin.slug}.png`;
+        tbody.innerHTML += `
+          <tr onclick="showModal('${coin.id}', '${coin.slug}')">
+            <td>${coin.cmc_rank || 'N/A'}</td>
+            <td><img src="${iconUrl}" class="coin-icon" alt="${coin.name}" loading="lazy" onerror="this.src='https://s2.coinmarketcap.com/static/img/coins/64x64/1.png'">${coin.name} (${coin.symbol})</td>
+            <td>${formatPrice(coin.quote.BRL.price)}<br><span class="${changeClass}">${(coin.quote.BRL.percent_change_24h || 0).toFixed(2)}%</span></td>
+            <td>${coin.quote.BRL.market_cap ? `R$ ${coin.quote.BRL.market_cap.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}` : 'N/A'}</td>
+            <td>${coin.quote.BRL.market_cap_dominance ? `${coin.quote.BRL.market_cap_dominance.toFixed(2)}%` : 'N/A'}</td>
+          </tr>
+        `;
+      });
+      changeLanguage(localStorage.getItem('language') || 'pt');
+    }
+
+    function debounceFilter() {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(filterTable, 300);
+    }
+
+    function filterTable() {
+      const searchValue = sanitizeInput(document.getElementById("search-input").value.toLowerCase());
+      const category = document.getElementById("category-filter").value;
+      currentPage = 1;
+      filteredData = cryptoData.filter(coin => {
+        const matchesSearch = coin.name.toLowerCase().includes(searchValue) || coin.symbol.toLowerCase().includes(searchValue);
+        const matchesCategory = !category || (coin.category || '') === category;
+        return matchesSearch && matchesCategory;
+      });
+      sortTable(sortColumn, false);
+    }
+
+    function sortTable(column, toggle = true) {
+      if (toggle) {
+        document.querySelectorAll('th').forEach(th => th.classList.remove('sorted', 'desc'));
+        const th = document.querySelector(`th[onclick="sortTable('${column}')"]`);
+        sortColumn = column;
+        sortDirection = sortColumn === column ? sortDirection * -1 : 1;
+        th.classList.add('sorted', sortDirection === -1 ? 'desc' : '');
+      }
+      filteredData.sort((a, b) => {
+        let valueA, valueB;
+        switch (column) {
+          case 'cmc_rank': valueA = a.cmc_rank || Infinity; valueB = b.cmc_rank || Infinity; break;
+          case 'name': valueA = a.name.toLowerCase(); valueB = b.name.toLowerCase(); break;
+          case 'price': valueA = a.quote.BRL.price || 0; valueB = b.quote.BRL.price || 0; break;
+          case 'market_cap': valueA = a.quote.BRL.market_cap || 0; valueB = b.quote.BRL.market_cap || 0; break;
+          case 'market_cap_dominance': valueA = a.quote.BRL.market_cap_dominance || 0; valueB = b.quote.BRL.market_cap_dominance || 0; break;
+        }
+        return typeof valueA === 'string' ? sortDirection * valueA.localeCompare(valueB) : sortDirection * (valueA - valueB);
+      });
+      renderTable(getPageData());
+      updatePagination();
+    }
+
+    async function showModal(coinId, coinSlug) {
+      const coin = cryptoData.find(c => c.id === coinId);
+      if (!coin) return;
+      const lang = localStorage.getItem('language') || 'pt';
+      document.getElementById('modal-title').textContent = `${coin.name} (${coin.symbol})`;
+      document.getElementById('modal-price').textContent = `${translations[lang].price_label}${formatPrice(coin.quote.BRL.price)}`;
+      document.getElementById('modal-market-cap').textContent = `${translations[lang].market_cap_label}${coin.quote.BRL.market_cap ?
+        `R$ ${coin.quote.BRL.market_cap.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}` : 'N/A'}`;
+      document.getElementById('modal-dominance').textContent = `${translations[lang].dominance_label}${coin.quote.BRL.market_cap_dominance ?
+        `${coin.quote.BRL.market_cap_dominance.toFixed(2)}%` : 'N/A'}`;
+      document.getElementById('modal-website').innerHTML = `${translations[lang].website_label}<a href="https://www.${coin.slug}.org" target="_blank">www.${coin.slug}.org</a>`;
+
+      let historicalData = mockHistoricalData;
+      try {
+        const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coinSlug}/market_chart?vs_currency=brl&days=7`);
+        historicalData = await res.json();
+        if (!res.ok) throw new Error('Erro ao carregar gráfico');
+      } catch (err) {
+        document.getElementById('modal-chart-error').style.display = 'block';
+      }
+
+      const ctx = document.getElementById('modal-chart').getContext('2d');
+      if (priceChart) priceChart.destroy();
+      priceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: historicalData.prices.map(p => new Date(p[0]).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })),
+          datasets: [{
+            label: translations[lang].chart_label,
+            data: historicalData.prices.map(p => p[1]),
+            borderColor: '#22c55e',
+            backgroundColor: 'rgba(34, 197, 94, 0.2)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#9ca3af' } },
+            y: { ticks: { color: '#9ca3af', callback: value => `R$ ${value.toLocaleString('pt-BR')}` } }
+          },
+          plugins: {
+            legend: { labels: { color: 'var(--text-color)' } },
+            tooltip: { callbacks: { label: ctx => `R$ ${ctx.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` } }
+          }
+        }
+      });
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+      if (priceChart) priceChart.destroy();
+      document.getElementById('modal-chart-error').style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedLang = localStorage.getItem('language') || 'pt';
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.body.setAttribute('data-theme', savedTheme);
+      document.querySelector('.theme-toggle span').setAttribute('data-i18n', savedTheme === 'dark' ? 'theme_dark' : 'theme_light');
+      document.getElementById('language-select').value = savedLang;
+      changeLanguage(savedLang);
+      fetchCryptoData();
+    });
+
+    document.addEventListener('click', e => {
+      const dropdown = document.getElementById('crypto-links');
+      if (!dropdown.contains(e.target) && !document.querySelector('.menu-icon').contains(e.target)) {
+        dropdown.classList.remove('active');
+      }
+    });
+
+    document.getElementById('modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('modal')) closeModal();
+    });
+  </script>
+</body>
+</html>
