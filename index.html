@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="title">CryptoPulse</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-color: #0e0e10;
+      --text-color: #f0f0f0;
+      --card-bg: #1f1f23;
+      --card-hover: #27272a;
+      --primary-color: #3b82f6;
+      --accent-color: #93c5fd;
+      --positive-color: #22c55e;
+      --negative-color: #ef4444;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    [data-theme="light"] {
+      --bg-color: #f3f4f6;
+      --text-color: #1f2937;
+      --card-bg: #ffffff;
+      --card-hover: #f9fafb;
+      --primary-color: #2563eb;
+      --accent-color: #60a5fa;
+      --positive-color: #16a34a;
+      --negative-color: #dc2626;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+    }
+    header {
+      background: var(--primary-color);
+      padding: 8px 16px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .menu-icon, .theme-toggle, .language-selector {
+      cursor: pointer;
+      color: #fff;
+      padding: 6px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      transition: background 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .menu-icon:hover, .theme-toggle:hover, .language-selector:hover { background: rgba(0, 0, 0, 0.5); }
+    .menu-icon svg, .theme-toggle svg, .language-selector svg { width: 18px; height: 18px; }
+    .language-selector select {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 56px;
+      right: 16px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      min-width: 200px;
+      padding: 8px 0;
+    }
+    .dropdown.active {
+      display: block;
+    }
+    .dropdown a {
+      display: block;
+      padding: 8px 16px;
+      color: var(--text-color);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .dropdown a:hover { background: var(--card-hover); color: var(--accent-color); }
+    .market-section {
+      max-width: 960px;
+      margin: 16px auto;
+      padding: 0 12px;
+      text-align: center;
+    }
+    .market-section h2 {
+      font-size: 1.2rem;
+      color: var(--accent-color);
+      margin-bottom: 16px;
+    }
+    .filter-controls select {
+      padding: 8px;
+      background: var(--card-bg);
+      border: none;
+      border-radius: 6px;
+      color: var(--text-color);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .market-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .market-stats.loading::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 30px;
+      height: 30px;
+      border: 3px solid var(--accent-color);
+      border-top: 3px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      transform: translate(-50%, -50%);
+    }
+    .stat-card {
+      padding: 10px;
+      background: var(--card-hover);
+      border-radius: 6px;
+    }
+    .stat-card h3 { font-size: 0.8rem; color: #9ca3af; margin-bottom: 6px; }
+    .stat-card p { font-size: 0.95rem; font-weight: 600; }
+    .search-bar {
+      margin: 16px auto;
+      display: flex;
+      max-width: 600px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .search-bar input {
+      padding: 8px 8px 8px 32px;
+      font-size: 0.9rem;
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--text-color);
+    }
+    .search-bar input:focus { outline: none; }
+    .search-bar svg {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      fill: #9ca3af;
+    }
+    .search-bar button {
+      padding: 8px 16px;
+      background: var(--primary-color);
+      border: none;
+      border-radius: 0 8px 8px 0;
+      color: #fff;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .search-bar button:hover { background: #2563eb; }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .pagination button {
+      padding: 6px 12px;
+      background: var(--card-bg);
+      color: var(--text-color);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .pagination button:hover { background: var(--primary-color); }
+    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pagination .page-info { font-size: 0.85rem; color: #9ca3af; }
+    table {
+      width: 100%;
+      max-width: 960px;
+      margin: 12px auto;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    table.loading::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 30px;
+      height: 30px;
+      border: 3px solid var(--accent-color);
+      border-top: 3px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      transform: translate(-50%, -50%);
+    }
+    th, td {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    th {
+      color: var(--accent-color);
+      font-weight: 600;
+      background: var(--card-hover);
+      cursor: pointer;
+    }
+    th:hover { background: #333; }
+    th.sorted::after {
+      content: '↑';
+      position: absolute;
+      right: 8px;
+      font-size: 0.8rem;
+    }
+    th.sorted.desc::after { content: '↓'; }
+    tbody tr {
+      border-bottom: 1px solid #2d2d31;
+    }
+    tbody tr:hover {
+      background: var(--card-hover);
+      cursor: pointer;
+    }
+    .positive { color: var(--positive-color); }
+    .negative { color: var(--negative-color); }
+    .coin-icon { width: 20px; height: 20px; vertical-align: middle; margin-right: 6px; }
+    .no-results, .error-message {
+      text-align: center;
+      padding: 16px;
+      color: #9ca3af;
+      font-size: 0.85rem;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      padding: 16px;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: var(--shadow);
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-content h2 { font-size: 1.2rem; margin-bottom: 12px; }
+    .modal-content p { font-size: 0.9rem; color: #d1d5db; margin-bottom: 8px; }
+    .modal-content a { color: var(--accent-color); text-decoration: none; }
+    .modal-content a:hover { text-decoration: underline; }
+    .modal-chart { margin-top: 16px; max-height: 200px; background: #18181b; padding: 12px; border-radius: 6px; }
+    .modal-chart-error { color: #9ca3af; text-align: center; margin-top: 8px; font-size: 0.8rem; }
+    .close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #9ca3af;
+    }
+    .close:hover { color: var(--text-color); }
+    footer {
+      text-align: center;
+      padding: 12px;
+      font-size: 0.8rem;
+      color: #9ca3af;
+      background: var(--card-bg);
+    }
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    @media (max-width: 768px) {
+      header { padding: 6px 12px; }
+      header h1 { font-size: 1.3rem; }
+      .dropdown { top: 50px; min-width: 180px; }
+      .market-section { padding: 0 10px; }
+      .market-stats { grid-template-columns: 1fr; }
+      .search-bar { max-width: 95%; }
+      th, td { font-size: 0.8rem; padding: 6px 8px; }
+      .modal-content { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 data-i18n="title">CryptoPulse</h1>
+    <div class="controls">
+      <span class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <span data-i18n="theme_dark">Tema Escuro</span>
+      </span>
+      <span class="language-selector" aria-label="Selecionar idioma">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+        <select id="language-select" onchange="changeLanguage(this.value)">
+          <option value="pt">Português</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+        </select>
+      </span>
+      <span class="menu-icon" onclick="toggleDropdown()" aria-label="Abrir menu">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </span>
+    </div>
+    <div class="dropdown" id="crypto-links">
+      <a href="portfolio.html" data-i18n="portfolio">Portfolio Pessoal</a>
+      <a href="tools.html" data-i18n="trackers">Rastreador & Exploradores</a>
+      <a href="settings.html" data-i18n="settings">Configurações</a>
+    </div>
+  </header>
+  <div class="market-section">
+    <h2 data-i18n="market_title">Mercado de Criptomoedas</h2>
+    <div class="market-stats loading" id="market-stats">
+      <div class="stat-card">
+        <h3 data-i18n="total_market_cap">Capitalização Total</h3>
+        <p id="total-market-cap">Carregando...</p>
+      </div>
+      <div class="stat-card">
+        <h3 data-i18n="volume_24h">Volume 24h</h3>
+        <p id="volume-24h">Carregando...</p>
+      </div>
+      <div class="stat-card">
+        <h3 data-i18n="btc_dominance">Dominância do Bitcoin</h3>
+        <p id="btc-dominance">Carregando...</p>
+      </div>
+    </div>
+    <div class="filter-controls">
+      <select id="category-filter" onchange="filterTable()">
+        <option value="" data-i18n="all_categories">Todas as Categorias</option>
+        <option value="defi" data-i18n="defi">DeFi</option>
+        <option value="meme" data-i18n="meme">Meme Coins</option>
+        <option value="stablecoin" data-i18n="stablecoin">Stablecoins</option>
+        <option value="layer-1" data-i18n="layer1">Layer 1</option>
+        <option value="layer-2" data-i18n="layer2">Layer 2</option>
+      </select>
+    </div>
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <input type="text" id="search-input" data-i18n-placeholder="search_placeholder" placeholder="Pesquisar por nome ou símbolo..." oninput="debounceFilter()">
+      <button onclick="filterTable()" data-i18n="search_button">Buscar</button>
+    </div>
+    <div class="pagination" id="pagination">
+      <button onclick="changePage(-1)" id="prev-page" disabled data-i18n="previous">Anterior</button>
+      <span class="page-info" id="page-info" data-i18n="page">Página 1</span>
+      <button onclick="changePage(1)" id="next-page" data-i18n="next">Próximo</button>
+    </div>
+    <table id="crypto-table" class="loading">
+      <thead>
+        <tr>
+          <th onclick="sortTable('cmc_rank')" data-i18n="rank">#</th>
+          <th onclick="sortTable('name')" data-i18n="coin">Moeda</th>
+          <th onclick="sortTable('price')" data-i18n="price">Preço (24h)</th>
+          <th onclick="sortTable('market_cap')" data-i18n="market_cap">Market Cap</th>
+          <th onclick="sortTable('market_cap_dominance')" data-i18n="dominance">Dominância</th>
+        </tr>
+      </thead>
+      <tbody><tr><td colspan="5" data-i18n="loading">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()" aria-label="Fechar modal">×</span>
+      <h2 id="modal-title"></h2>
+      <p id="modal-price" data-i18n-prefix="price_label">Preço: </p>
+      <p id="modal-market-cap" data-i18n-prefix="market_cap_label">Market Cap: </p>
+      <p id="modal-dominance" data-i18n-prefix="dominance_label">Dominância: </p>
+      <p id="modal-website" data-i18n-prefix="website_label">Website: </p>
+      <canvas id="modal-chart" class="modal-chart"></canvas>
+      <p id="modal-chart-error" class="modal-chart-error" style="display: none;" data-i18n="chart_error">Erro ao carregar gráfico</p>
+    </div>
+  </div>
+  <footer>
+    <span data-i18n="footer">© 2025 CryptoPulse | Dados: CoinGecko</span>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>
