@@ -1,230 +1,875 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crypto Pulse</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title data-i18n="title">CryptoPulse</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #f4f4f4;
+    :root {
+      --bg-color: #0e0e10;
+      --text-color: #f0f0f0;
+      --card-bg: #1f1f23;
+      --card-hover: #27272a;
+      --primary-color: #3b82f6;
+      --accent-color: #93c5fd;
+      --positive-color: #22c55e;
+      --negative-color: #ef4444;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      --gradient: linear-gradient(135deg, #6b46c1, #2b6cb0, #0987a0);
     }
-    h1 {
-      text-align: center;
-      color: #333;
+    [data-theme="light"] {
+      --bg-color: #f3f4f6;
+      --text-color: #1f2937;
+      --card-bg: #ffffff;
+      --card-hover: #f9fafb;
+      --primary-color: #2563eb;
+      --accent-color: #60a5fa;
+      --positive-color: #16a34a;
+      --negative-color: #dc2626;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --gradient: linear-gradient(135deg, #93c5fd, #60a5fa, #3b82f6);
     }
-    .search-container {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: linear-gradient(to bottom, var(--bg-color), #18181b); 
+      color: var(--text-color); 
+      line-height: 1.6; 
+      transition: background 0.3s ease, color 0.3s ease;
+      min-height: 100vh;
     }
-    #search-input {
-      padding: 10px;
-      font-size: 16px;
-      width: 300px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      margin-right: 10px;
-    }
-    #search-button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    #search-button:hover {
-      background-color: #0056b3;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: white;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-    th {
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-    }
-    th:hover {
-      background-color: #0056b3;
-    }
-    tr:hover {
-      background-color: #f5f5f5;
-      cursor: pointer;
-    }
-    .sort-icon {
-      margin-left: 5px;
-    }
-    .pagination {
-      display: flex;
-      justify-content: center;
-      margin-top: 20px;
-    }
-    .pagination button {
-      padding: 10px 15px;
-      margin: 0 5px;
-      border: 1px solid #ccc;
-      background-color: white;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-    .pagination button:disabled {
-      background-color: #f4f4f4;
-      cursor: not-allowed;
-    }
-    .pagination button:hover:not(:disabled) {
-      background-color: #007bff;
-      color: white;
-    }
-    .error-message {
-      color: red;
-      text-align: center;
-    }
-    #loading {
-      text-align: center;
-      font-size: 18px;
-      margin: 20px 0;
-    }
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1;
-      left: 0;
+
+    header { 
+      background: var(--gradient); 
+      padding: 10px 20px; 
+      box-shadow: var(--shadow);
+      position: sticky;
       top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      justify-content: center;
+      z-index: 1000;
+      display: flex;
       align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
     }
-    .modal-content {
-      background-color: white;
-      padding: 20px;
-      border-radius: 5px;
-      width: 80%;
-      max-width: 500px;
+    header h1 { 
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.6rem; 
+      font-weight: 700; 
+      background: linear-gradient(90deg, #ffffff, #93c5fd, #ffffff);
+      background-size: 200% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: 1px; 
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+      animation: gradientShift 4s ease-in-out infinite;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .menu-icon {
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: #ffffff;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 6px;
+      border-radius: 6px;
+      transition: background 0.3s ease, transform 0.2s ease;
+      z-index: 1001;
+    }
+    .menu-icon:hover { 
+      background: rgba(0, 0, 0, 0.4); 
+      transform: scale(1.1);
+    }
+    .menu-icon svg { width: 22px; height: 22px; }
+
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 60px;
+      right: 20px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      min-width: 240px;
+      padding: 12px 0;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .dropdown.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .dropdown .category {
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      color: #9ca3af;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .dropdown a {
+      display: block;
+      padding: 8px 16px;
+      color: var(--text-color);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .dropdown a:hover {
+      background: var(--card-hover);
+      color: var(--accent-color);
+    }
+
+    .language-selector {
+      display: flex;
+      align-items: center;
+      color: #ffffff;
+      font-size: 0.9rem;
+      cursor: pointer;
       position: relative;
     }
-    .close {
-      position: absolute;
-      right: 10px;
-      top: 10px;
-      font-size: 20px;
+    .language-selector select {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 0.9rem;
+      padding: 4px;
       cursor: pointer;
+      appearance: none;
+    }
+    .language-selector select:focus { outline: none; }
+    .language-selector svg {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      color: #ffffff;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      transition: background 0.3s ease;
+    }
+    .theme-toggle:hover { background: rgba(0, 0, 0, 0.2); }
+    .theme-toggle svg {
+      width: 20px;
+      height: 20px;
+      margin-right: 8px;
+    }
+
+    .market-section {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 16px;
+      text-align: center;
+    }
+    .market-section h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--accent-color);
+      margin-bottom: 24px;
+      letter-spacing: 0.5px;
+    }
+
+    .market-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+      padding: 16px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+    .stat-card {
+      padding: 12px;
+      background: var(--card-hover);
+      border-radius: 8px;
+      text-align: left;
+    }
+    .stat-card h3 {
+      font-size: 0.9rem;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+    .stat-card p {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .search-bar { 
+      margin: 24px auto; 
+      display: flex; 
+      align-items: center; 
+      max-width: 700px; 
+      position: relative;
+      background: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+    .search-bar:hover { transform: scale(1.02); }
+    .search-bar input { 
+      padding: 12px 12px 12px 40px; 
+      font-size: 1rem; 
+      width: 100%; 
+      border: none; 
+      background: transparent; 
+      color: var(--text-color); 
+      transition: background 0.3s ease;
+    }
+    .search-bar input:focus { outline: none; background: var(--card-hover); }
+    .search-bar svg {
+      position: absolute; 
+      left: 12px; 
+      top: 50%; 
+      transform: translateY(-50%); 
+      width: 20px; 
+      height: 20px; 
+      fill: #9ca3af;
+    }
+    .search-bar button {
+      padding: 12px 20px;
+      background: var(--primary-color);
+      border: none;
+      border-radius: 0 10px 10px 0;
+      color: #ffffff;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .search-bar button:hover { background: #2563eb; }
+
+    .pagination {
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      margin: 20px auto; 
+      gap: 12px;
+    }
+    .pagination button {
+      padding: 8px 16px; 
+      font-size: 0.9rem; 
+      background: var(--card-bg); 
+      color: var(--text-color); 
+      border: none; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .pagination button:hover { 
+      background: var(--primary-color); 
+      transform: scale(1.05);
+    }
+    .pagination button:disabled { 
+      background: var(--card-bg); 
+      color: #6b7280; 
+      cursor: not-allowed; 
+      opacity: 0.5;
+    }
+    .pagination .page-info {
+      font-size: 0.9rem;
+      color: #9ca3af;
+    }
+    .pagination.hidden { display: none; }
+
+    table { 
+      width: 100%; 
+      max-width: 1200px; 
+      margin: 16px auto; 
+      border-collapse: separate; 
+      border-spacing: 0;
+      background: var(--card-bg); 
+      border-radius: 12px; 
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    th, td { 
+      padding: 12px 16px; 
+      text-align: left; 
+      font-size: 0.95rem; 
+    }
+    th { 
+      color: var(--accent-color); 
+      font-weight: 600; 
+      background: var(--card-hover); 
+      cursor: pointer; 
+      position: relative;
+      transition: background 0.3s ease;
+    }
+    th:hover { background: #333; }
+    th.sorted::after {
+      content: '↑';
+      position: absolute;
+      right: 8px;
+      font-size: 0.8rem;
+      color: var(--accent-color);
+    }
+    th.sorted.desc::after { content: '↓'; }
+    tbody tr { 
+      border-bottom: 1px solid #2d2d31; 
+      transition: background 0.3s ease, transform 0.2s ease; 
+    }
+    tbody tr:hover { 
+      background: var(--card-hover); 
+      cursor: pointer; 
+      transform: translateY(-2px);
+    }
+    .positive { color: var(--positive-color); font-weight: 500; }
+    .negative { color: var(--negative-color); font-weight: 500; }
+    .coin-icon { 
+      width: 24px; 
+      height: 24px; 
+      vertical-align: middle; 
+      margin-right: 10px; 
+      border-radius: 50%;
+    }
+    .no-results, .error-message { 
+      text-align: center; 
+      padding: 24px; 
+      color: #9ca3af; 
+      font-size: 1rem;
+    }
+    .price sup { 
+      font-size: 0.6rem; 
+      vertical-align: super; 
+    }
+
+    .modal { 
+      display: none; 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      background: rgba(0, 0, 0, 0.85); 
+      justify-content: center; 
+      align-items: center; 
+      z-index: 1000;
+    }
+    .modal-content { 
+      background: var(--card-bg); 
+      padding: 24px; 
+      border-radius: 12px; 
+      max-width: 680px; 
+      width: 90%; 
+      position: relative; 
+      box-shadow: var(--shadow);
+      max-height: 90vh; 
+      overflow-y: auto;
+    }
+    .modal-content h2 { 
+      font-size: 1.5rem; 
+      margin-bottom: 16px; 
+      font-weight: 600; 
+      color: var(--text-color);
+    }
+    .modal-content p { 
+      font-size: 1rem; 
+      color: #d1d5db; 
+      margin-bottom: 12px; 
+      line-height: 1.5;
+    }
+    .modal-content a { 
+      color: var(--accent-color); 
+      text-decoration: none; 
+      transition: color 0.3s ease;
+    }
+    .modal-content a:hover { 
+      color: #60a5fa; 
+      text-decoration: underline; 
+    }
+    .modal-chart { 
+      margin-top: 24px; 
+      max-height: 320px; 
+      width: 100%; 
+      background: #18181b; 
+      padding: 16px; 
+      border-radius: 8px;
+    }
+    .modal-chart-error { 
+      color: #9ca3af; 
+      text-align: center; 
+      margin-top: 12px; 
+      font-size: 0.9rem;
+    }
+    .close { 
+      position: absolute; 
+      top: 16px; 
+      right: 16px; 
+      font-size: 1.5rem; 
+      cursor: pointer; 
+      color: #9ca3af; 
+      transition: color 0.3s ease;
+    }
+    .close:hover { color: var(--text-color); }
+
+    footer { 
+      text-align: center; 
+      padding: 20px; 
+      font-size: 0.85rem; 
+      color: #9ca3af; 
+      border-top: 1px solid #2d2d31; 
+      margin-top: 32px;
+      background: var(--card-bg);
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @media (max-width: 768px) {
+      header { padding: 8px 16px; }
+      header h1 { font-size: 1.4rem; }
+      .controls { gap: 8px; }
+      .menu-icon { font-size: 1.2rem; }
+      .dropdown { top: 50px; right: 12px; min-width: 200px; }
+      .dropdown a { font-size: 0.85rem; padding: 8px 12px; }
+      .language-selector select { font-size: 0.85rem; }
+      .theme-toggle { font-size: 0.85rem; padding: 4px; }
+      .market-section { padding: 0 12px; }
+      .market-section h2 { font-size: 1.2rem; }
+      .market-stats { grid-template-columns: 1fr; }
+      .search-bar { margin: 16px auto; max-width: 90%; }
+      .search-bar input { font-size: 0.95rem; padding: 10px 10px 10px 36px; }
+      .search-bar button { padding: 10px 16px; font-size: 0.85rem; }
+      .pagination button { padding: 6px 12px; font-size: 0.85rem; }
+      .pagination .page-info { font-size: 0.85rem; }
+      table { font-size: 0.9rem; }
+      th, td { padding: 10px 12px; font-size: 0.85rem; }
+      .coin-icon { width: 20px; height: 20px; }
+      .modal-content { padding: 16px; max-width: 95%; }
+      .modal-content h2 { font-size: 1.3rem; }
+      .modal-content p { font-size: 0.9rem; }
+      .modal-chart { max-height: 240px; padding: 12px; }
+    }
+
+    @media (max-width: 480px) {
+      header h1 { font-size: 1.2rem; }
+      .menu-icon { padding: 4px; }
+      .dropdown { min-width: 180px; }
+      .search-bar input { font-size: 0.9rem; }
+      th, td { font-size: 0.8rem; padding: 8px 10px; }
+      .modal-content { padding: 12px; }
+      .modal-chart { max-height: 200px; }
+      .stat-card h3 { font-size: 0.85rem; }
+      .stat-card p { font-size: 1rem; }
     }
   </style>
 </head>
 <body>
-  <h1>Crypto Pulse</h1>
-  <div class="search-container">
-    <input type="text" id="search-input" placeholder="Pesquisar por nome ou símbolo...">
-    <button id="search-button">Pesquisar</button>
+  <header>
+    <h1 data-i18n="title">CryptoPulse</h1>
+    <div class="controls">
+      <span class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <span data-i18n="theme">Tema Escuro</span>
+      </span>
+      <span class="language-selector" aria-label="Selecionar idioma">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+        <select onchange="changeLanguage(this.value)">
+          <option value="pt">Português</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+        </select>
+      </span>
+      <span class="menu-icon" onclick="toggleDropdown()" aria-label="Abrir menu">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </span>
+    </div>
+    <div class="dropdown" id="crypto-links">
+      <div class="category" data-i18n="category_tools">Ferramentas</div>
+      <a href="portfolio.html" data-i18n="portfolio">Portfolio Pessoal</a>
+      <a href="tools.html" data-i18n="trackers">Rastreador & Exploradores</a>
+      <div class="category" data-i18n="category_data">Dados</div>
+      <a href="https://coinmarketcap.com" target="_blank">CoinMarketCap</a>
+      <a href="https://www.coingecko.com" target="_blank">CoinGecko</a>
+      <a href="https://www.tradingview.com" target="_blank" data-i18n="tradingview">TradingView (Gráficos)</a>
+      <div class="category" data-i18n="category_analysis">Análises</div>
+      <a href="https://messari.io" target="_blank">Messari</a>
+      <a href="https://defillama.com" target="_blank" data-i18n="defillama">DefiLlama (DeFi)</a>
+      <a href="https://cryptoquant.com" target="_blank" data-i18n="cryptoquant">CryptoQuant (On-Chain)</a>
+      <a href="https://token.unlocks.app" target="_blank" data-i18n="token_unlocks">Token Unlocks</a>
+      <a href="https://dune.com" target="_blank" data-i18n="dune">Dune Analytics (On-Chain)</a>
+      <a href="https://lunarcrush.com" target="_blank" data-i18n="lunarcrush">LunarCrush (Sentimento)</a>
+      <a href="https://whale-alert.io" target="_blank" data-i18n="whale_alert">Whale Alert (Baleias)</a>
+      <div class="category" data-i18n="category_exchanges">Exchanges</div>
+      <a href="https://www.binance.com" target="_blank">Binance</a>
+      <a href="https://www.coinbase.com" target="_blank">Coinbase</a>
+      <div class="category" data-i18n="category_news">Notícias</div>
+      <a href="https://www.coindesk.com" target="_blank">CoinDesk</a>
+    </div>
+  </header>
+  <div class="market-section">
+    <h2 data-i18n="market_title">Mercado de Criptomoedas</h2>
+    <div class="market-stats" id="market-stats">
+      <div class="stat-card">
+        <h3 data-i18n="total_market_cap">Capitalização Total</h3>
+        <p id="total-market-cap">Carregando...</p>
+      </div>
+      <div class="stat-card">
+        <h3 data-i18n="volume_24h">Volume 24h</h3>
+        <p id="volume-24h">Carregando...</p>
+      </div>
+      <div class="stat-card">
+        <h3 data-i18n="btc_dominance">Dominância do Bitcoin</h3>
+        <p id="btc-dominance">Carregando...</p>
+      </div>
+    </div>
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <input type="text" id="search-input" data-i18n-placeholder="search_placeholder" placeholder="Pesquisar por nome, símbolo ou endereço de contrato..." onkeyup="filterTable()">
+      <button onclick="filterTable()" data-i18n="search_button">Buscar</button>
+    </div>
+    <div class="pagination hidden" id="pagination">
+      <button onclick="changePage(-1)" id="prev-page" disabled data-i18n="previous">Anterior</button>
+      <span class="page-info" id="page-info" data-i18n="page">Página 1</span>
+      <button onclick="changePage(1)" id="next-page" data-i18n="next">Próximo</button>
+    </div>
+    <table id="crypto-table">
+      <thead>
+        <tr>
+          <th onclick="sortTable('cmc_rank')" data-i18n="rank">#</th>
+          <th onclick="sortTable('name')" data-i18n="coin">Moeda</th>
+          <th onclick="sortTable('price')" data-i18n="price">Preço (24h)</th>
+          <th onclick="sortTable('market_cap')" data-i18n="market_cap">Market Cap</th>
+          <th onclick="sortTable('market_cap_dominance')" data-i18n="dominance">Dominância</th>
+        </tr>
+      </thead>
+      <tbody><tr><td colspan="5" data-i18n="loading">Carregando...</td></tr></tbody>
+    </table>
   </div>
-  <div id="loading">Carregando...</div>
-  <table id="crypto-table" style="display: none;">
-    <thead>
-      <tr>
-        <th data-sort="cmc_rank">Rank <i class="fas fa-sort sort-icon"></i></th>
-        <th data-sort="name">Nome <i class="fas fa-sort sort-icon"></i></th>
-        <th data-sort="symbol">Símbolo <i class="fas fa-sort sort-icon"></i></th>
-        <th data-sort="price">Preço (BRL) <i class="fas fa-sort sort-icon"></i></th>
-        <th data-sort="percent_change_24h">Variação 24h <i class="fas fa-sort sort-icon"></i></th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <div class="pagination">
-    <button id="prev-page" disabled>Anterior</button>
-    <button id="next-page">Próximo</button>
-  </div>
-
-  <div id="crypto-modal" class="modal">
+  <div id="modal" class="modal">
     <div class="modal-content">
-      <span class="close">&times;</span>
+      <span class="close" onclick="closeModal()" aria-label="Fechar modal">×</span>
       <h2 id="modal-title"></h2>
-      <p id="modal-description"></p>
-      <p><strong>Preço (BRL):</strong> <span id="modal-price"></span></p>
-      <p><strong>Variação 24h:</strong> <span id="modal-change"></span></p>
-      <p><strong>Capitalização de Mercado:</strong> <span id="modal-market-cap"></span></p>
-      <p><strong>Dominância:</strong> <span id="modal-dominance"></span></p>
-      <p><strong>Contrato:</strong> <span id="modal-contract"></span></p>
-      <p><strong>Site:</strong> <a id="modal-website" href="#" target="_blank"></a></p>
+      <p id="modal-price" data-i18n-prefix="price_label">Preço: </p>
+      <p id="modal-market-cap" data-i18n-prefix="market_cap_label">Market Cap: </p>
+      <p id="modal-dominance" data-i18n-prefix="dominance_label">Dominância: </p>
+      <p id="modal-contract" data-i18n-prefix="contract_label">Contrato: </p>
+      <p id="modal-website" data-i18n-prefix="website_label">Website: </p>
+      <canvas id="modal-chart" class="modal-chart"></canvas>
+      <p id="modal-chart-error" class="modal-chart-error" style="display: none;" data-i18n="chart_error">Erro ao carregar gráfico</p>
     </div>
   </div>
-
+  <footer>
+    <span data-i18n="footer">© 2025 CryptoPulse | Dados: CoinMarketCap, CoinGecko</span>
+  </footer>
   <script>
+    const translations = {
+      pt: {
+        title: "CryptoPulse",
+        theme: "Tema Escuro",
+        category_tools: "Ferramentas",
+        portfolio: "Portfolio Pessoal",
+        trackers: "Rastreador & Exploradores",
+        category_data: "Dados",
+        tradingview: "TradingView (Gráficos)",
+        category_analysis: "Análises",
+        defillama: "DefiLlama (DeFi)",
+        cryptoquant: "CryptoQuant (On-Chain)",
+        token_unlocks: "Token Unlocks",
+        dune: "Dune Analytics (On-Chain)",
+        lunarcrush: "LunarCrush (Sentimento)",
+        whale_alert: "Whale Alert (Baleias)",
+        category_exchanges: "Exchanges",
+        category_news: "Notícias",
+        market_title: "Mercado de Criptomoedas",
+        search_placeholder: "Pesquisar por nome, símbolo ou endereço de contrato...",
+        search_button: "Buscar",
+        previous: "Anterior",
+        next: "Próximo",
+        page: "Página {0}",
+        rank: "#",
+        coin: "Moeda",
+        price: "Preço (24h)",
+        market_cap: "Market Cap",
+        dominance: "Dominância",
+        loading: "Carregando...",
+        price_label: "Preço: ",
+        market_cap_label: "Market Cap: ",
+        dominance_label: "Dominância: ",
+        contract_label: "Contrato: ",
+        website_label: "Website: ",
+        chart_error: "Erro ao carregar gráfico",
+        footer: "© 2025 CryptoPulse | Dados: CoinMarketCap, CoinGecko",
+        not_available: "Não disponível",
+        modal_error: "Erro ao carregar detalhes da moeda",
+        total_market_cap: "Capitalização Total",
+        volume_24h: "Volume 24h",
+        btc_dominance: "Dominância do Bitcoin"
+      },
+      en: {
+        title: "CryptoPulse",
+        theme: "Dark Theme",
+        category_tools: "Tools",
+        portfolio: "Personal Portfolio",
+        trackers: "Trackers & Explorers",
+        category_data: "Data",
+        tradingview: "TradingView (Charts)",
+        category_analysis: "Analysis",
+        defillama: "DefiLlama (DeFi)",
+        cryptoquant: "CryptoQuant (On-Chain)",
+        token_unlocks: "Token Unlocks",
+        dune: "Dune Analytics (On-Chain)",
+        lunarcrush: "LunarCrush (Sentiment)",
+        whale_alert: "Whale Alert (Whales)",
+        category_exchanges: "Exchanges",
+        category_news: "News",
+        market_title: "Cryptocurrency Market",
+        search_placeholder: "Search by name, symbol, or contract address...",
+        search_button: "Search",
+        previous: "Previous",
+        next: "Next",
+        page: "Page {0}",
+        rank: "#",
+        coin: "Coin",
+        price: "Price (24h)",
+        market_cap: "Market Cap",
+        dominance: "Dominance",
+        loading: "Loading...",
+        price_label: "Price: ",
+        market_cap_label: "Market Cap: ",
+        dominance_label: "Dominance: ",
+        contract_label: "Contract: ",
+        website_label: "Website: ",
+        chart_error: "Error loading chart",
+        footer: "© 2025 CryptoPulse | Data: CoinMarketCap, CoinGecko",
+        not_available: "Not available",
+        modal_error: "Error loading coin details",
+        total_market_cap: "Total Market Cap",
+        volume_24h: "24h Volume",
+        btc_dominance: "Bitcoin Dominance"
+      },
+      es: {
+        title: "CryptoPulse",
+        theme: "Tema Oscuro",
+        category_tools: "Herramientas",
+        portfolio: "Portafolio Personal",
+        trackers: "Rastreadores y Exploradores",
+        category_data: "Datos",
+        tradingview: "TradingView (Gráficos)",
+        category_analysis: "Análisis",
+        defillama: "DefiLlama (DeFi)",
+        cryptoquant: "CryptoQuant (On-Chain)",
+        token_unlocks: "Desbloqueos de Tokens",
+        dune: "Dune Analytics (On-Chain)",
+        lunarcrush: "LunarCrush (Sentimiento)",
+        whale_alert: "Whale Alert (Ballenas)",
+        category_exchanges: "Exchanges",
+        category_news: "Noticias",
+        market_title: "Mercado de Criptomonedas",
+        search_placeholder: "Buscar por nombre, símbolo o dirección de contrato...",
+        search_button: "Buscar",
+        previous: "Anterior",
+        next: "Siguiente",
+        page: "Página {0}",
+        rank: "#",
+        coin: "Moneda",
+        price: "Precio (24h)",
+        market_cap: "Capitalización de Mercado",
+        dominance: "Dominancia",
+        loading: "Cargando...",
+        price_label: "Precio: ",
+        market_cap_label: "Capitalización de Mercado: ",
+        dominance_label: "Dominancia: ",
+        contract_label: "Contrato: ",
+        website_label: "Sitio Web: ",
+        chart_error: "Error al cargar el gráfico",
+        footer: "© 2025 CryptoPulse | Datos: CoinMarketCap, CoinGecko",
+        not_available: "No disponible",
+        modal_error: "Error al cargar detalles de la moneda",
+        total_market_cap: "Capitalización Total",
+        volume_24h: "Volumen 24h",
+        btc_dominance: "Dominancia de Bitcoin"
+      },
+      fr: {
+        title: "CryptoPulse",
+        theme: "Thème Sombre",
+        category_tools: "Outils",
+        portfolio: "Portefeuille Personnel",
+        trackers: "Traqueurs & Explorateurs",
+        category_data: "Données",
+        tradingview: "TradingView (Graphiques)",
+        category_analysis: "Analyses",
+        defillama: "DefiLlama (DeFi)",
+        cryptoquant: "CryptoQuant (On-Chain)",
+        token_unlocks: "Déblocages de Jetons",
+        dune: "Dune Analytics (On-Chain)",
+        lunarcrush: "LunarCrush (Sentiment)",
+        whale_alert: "Whale Alert (Baleines)",
+        category_exchanges: "Échanges",
+        category_news: "Actualités",
+        market_title: "Marché des Cryptomonnaies",
+        search_placeholder: "Rechercher par nom, symbole ou adresse de contrat...",
+        search_button: "Rechercher",
+        previous: "Précédent",
+        next: "Suivant",
+        page: "Page {0}",
+        rank: "#",
+        coin: "Monnaie",
+        price: "Prix (24h)",
+        market_cap: "Capitalisation Boursière",
+        dominance: "Dominance",
+        loading: "Chargement...",
+        price_label: "Prix : ",
+        market_cap_label: "Capitalisation Boursière : ",
+        dominance_label: "Dominance : ",
+        contract_label: "Contrat : ",
+        website_label: "Site Web : ",
+        chart_error: "Erreur lors du chargement du graphique",
+        footer: "© 2025 CryptoPulse | Données : CoinMarketCap, CoinGecko",
+        not_available: "Non disponible",
+        modal_error: "Erreur lors du chargement des détails de la monnaie",
+        total_market_cap: "Capitalisation Totale",
+        volume_24h: "Volume 24h",
+        btc_dominance: "Dominance du Bitcoin"
+      },
+      de: {
+        title: "CryptoPulse",
+        theme: "Dunkles Thema",
+        category_tools: "Werkzeuge",
+        portfolio: "Persönliches Portfolio",
+        trackers: "Tracker & Explorer",
+        category_data: "Daten",
+        tradingview: "TradingView (Diagramme)",
+        category_analysis: "Analysen",
+        defillama: "DefiLlama (DeFi)",
+        cryptoquant: "CryptoQuant (On-Chain)",
+        token_unlocks: "Token-Freigaben",
+        dune: "Dune Analytics (On-Chain)",
+        lunarcrush: "LunarCrush (Stimmung)",
+        whale_alert: "Whale Alert (Wale)",
+        category_exchanges: "Börsen",
+        category_news: "Nachrichten",
+        market_title: "Kryptowährungsmarkt",
+        search_placeholder: "Suche nach Name, Symbol oder Vertragsadresse...",
+        search_button: "Suchen",
+        previous: "Zurück",
+        next: "Weiter",
+        page: "Seite {0}",
+        rank: "#",
+        coin: "Münze",
+        price: "Preis (24h)",
+        market_cap: "Marktkapitalisierung",
+        dominance: "Dominanz",
+        loading: "Laden...",
+        price_label: "Preis: ",
+        market_cap_label: "Marktkapitalisierung: ",
+        dominance_label: "Dominanz: ",
+        contract_label: "Vertrag: ",
+        website_label: "Website: ",
+        chart_error: "Fehler beim Laden des Diagramms",
+        footer: "© 2025 CryptoPulse | Daten: CoinMarketCap, CoinGecko",
+        not_available: "Nicht verfügbar",
+        modal_error: "Fehler beim Laden der Münzdetails",
+        total_market_cap: "Gesamte Marktkapitalisierung",
+        volume_24h: "24h-Volumen",
+        btc_dominance: "Bitcoin-Dominanz"
+      }
+    };
+
+    function changeLanguage(lang) {
+      localStorage.setItem('language', lang);
+      savedLang = lang;
+      const translation = translations[lang] || translations.pt;
+
+      document.querySelectorAll('[data-i18n]').forEach(elem => {
+        const key = elem.getAttribute('data-i18n');
+        if (translation[key]) {
+          elem.textContent = translation[key];
+        }
+      });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(elem => {
+        const key = elem.getAttribute('data-i18n-placeholder');
+        if (translation[key]) {
+          elem.placeholder = translation[key];
+        }
+      });
+
+      document.querySelectorAll('[data-i18n-prefix]').forEach(elem => {
+        const key = elem.getAttribute('data-i18n-prefix');
+        const currentText = elem.textContent.split(': ').slice(1).join(': ');
+        if (translation[key]) {
+          elem.textContent = translation[key] + currentText;
+        }
+      });
+
+      updatePagination();
+      const theme = document.body.getAttribute('data-theme') || 'dark';
+      const themeText = theme === 'dark' ? translation.theme : translation.theme.replace('Escuro', 'Claro').replace('Dark', 'Light').replace('Oscuro', 'Claro').replace('Sombre', 'Clair').replace('Dunkles', 'Helles');
+      document.querySelector('.theme-toggle span').textContent = themeText;
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.body.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      const lang = localStorage.getItem('language') || 'pt';
+      const themeText = newTheme === 'dark' ? translations[lang].theme : translations[lang].theme.replace('Escuro', 'Claro').replace('Dark', 'Light').replace('Oscuro', 'Claro').replace('Sombre', 'Clair').replace('Dunkles', 'Helles');
+      document.querySelector('.theme-toggle span').textContent = themeText;
+    }
+
+    function toggleDropdown() {
+      const dropdown = document.getElementById('crypto-links');
+      dropdown.classList.toggle('active');
+    }
+
+    let savedLang = localStorage.getItem('language') || 'pt';
+    document.addEventListener('DOMContentLoaded', () => {
+      changeLanguage(savedLang);
+      document.querySelector('select').value = savedLang;
+
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.body.setAttribute('data-theme', savedTheme);
+      const lang = savedLang;
+      const themeText = savedTheme === 'dark' ? translations[lang].theme : translations[lang].theme.replace('Escuro', 'Claro').replace('Dark', 'Light').replace('Oscuro', 'Claro').replace('Sombre', 'Clair').replace('Dunkles', 'Helles');
+      document.querySelector('.theme-toggle span').textContent = themeText;
+    });
+
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('crypto-links');
+      const icon = document.querySelector('.menu-icon');
+      if (!dropdown.contains(e.target) && !icon.contains(e.target)) {
+        dropdown.classList.remove('active');
+      }
+    });
+
+    const cmcApiKey = "9e0ef985-caf5-43d3-90e0-a73304b5546e";
+    const cmcApiUrl = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=5000&convert=BRL';
+    const cmcGlobalUrl = 'https://pro-api.coinmarketcap.com/v1/global-metrics/quotes/latest?convert=BRL';
+    const cgApiUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=brl&per_page=250&page=';
     let cryptoData = [];
     let filteredData = [];
     let currentPage = 1;
-    const itemsPerPage = 10;
+    const itemsPerPage = 50;
+    let debounceTimeout;
     let sortColumn = 'cmc_rank';
-    let sortDirection = 'asc';
-
-    // URLs do proxy no Vercel
-    const cmcApiUrl = 'https://crypto-pulse-backend.vercel.app/cmc/listings';
-    const cgApiUrl = 'https://crypto-pulse-backend.vercel.app/cg/markets?page=';
-
-    const cache = new Map();
-
-    async function getCachedData(key, fetchFunction) {
-      if (cache.has(key)) {
-        return cache.get(key);
-      }
-      const data = await fetchFunction();
-      cache.set(key, data);
-      return data;
-    }
-
-    async function fetchCmcData() {
-      const res = await fetch(cmcApiUrl);
-      if (!res.ok) throw new Error(`Erro ao buscar dados do CoinMarketCap: ${res.status}`);
-      const json = await res.json();
-      console.log('Dados CoinMarketCap recebidos:', json);
-      return json.data.map(coin => ({
-        id: `coinmarketcap-${coin.id}`,
-        name: coin.name,
-        symbol: coin.symbol,
-        slug: coin.slug,
-        cmc_rank: coin.cmc_rank,
-        quote: { BRL: { price: coin.quote.BRL.price, percent_change_24h: coin.quote.BRL.percent_change_24h, market_cap: coin.quote.BRL.market_cap, market_cap_dominance: coin.quote.BRL.market_cap_dominance } },
-        contract_address: null
-      }));
-    }
-
-    async function fetchCgData() {
-      let allCoins = [];
-      let page = 1;
-      while (true) {
-        const res = await fetch(cgApiUrl + page);
-        if (!res.ok) throw new Error(`Erro ao buscar dados do CoinGecko: ${res.status}`);
-        const coins = await res.json();
-        console.log(`CoinGecko página ${page} recebida:`, coins);
-        if (coins.length === 0) break;
-        allCoins.push(...coins.map(coin => ({
-          id: `coingecko-${coin.id}`,
-          name: coin.name,
-          symbol: coin.symbol.toUpperCase(),
-          slug: coin.id,
-          cmc_rank: coin.market_cap_rank,
-          quote: { BRL: { price: coin.current_price, percent_change_24h: coin.price_change_percentage_24h, market_cap: coin.market_cap, market_cap_dominance: null } },
-          contract_address: null
-        })));
-        page++;
-      }
-      return allCoins;
-    }
+    let sortDirection = 1;
+    let priceChart = null;
+    let contractCache = {};
 
     const mockData = [
       { id: "coinmarketcap-1", name: "Bitcoin", symbol: "BTC", slug: "bitcoin", cmc_rank: 1, quote: { BRL: { price: 350000, percent_change_24h: 2.5, market_cap: 7000000000000, market_cap_dominance: 50 } }, contract_address: null },
@@ -233,62 +878,192 @@
       { id: "coinmarketcap-9998", name: "Dogecoin", symbol: "DOGE", slug: "dogecoin", cmc_rank: 4, quote: { BRL: { price: 0.00123456, percent_change_24h: -0.8, market_cap: 150000000000, market_cap_dominance: 1.2 } }, contract_address: null }
     ];
 
+    const mockHistoricalData = {
+      prices: [
+        [Date.now() - 6 * 24 * 60 * 60 * 1000, 340000],
+        [Date.now() - 5 * 24 * 60 * 60 * 1000, 345000],
+        [Date.now() - 4 * 24 * 60 * 60 * 1000, 350000],
+        [Date.now() - 3 * 24 * 60 * 60 * 1000, 348000],
+        [Date.now() - 2 * 24 * 60 * 60 * 1000, 352000],
+        [Date.now() - 1 * 24 * 60 * 60 * 1000, 355000],
+        [Date.now(), 350000]
+      ]
+    };
+
+    function formatPrice(price) {
+      if (!price || isNaN(price)) return 'R$ N/A';
+      if (price >= 1) {
+        return `R$ ${price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      }
+      const priceStr = price.toFixed(6).replace(/\.?0+$/, '');
+      const parts = priceStr.split('.');
+      const decimal = parts[1] || '';
+      let zeroCount = 0;
+      for (let i = 0; i < decimal.length; i++) {
+        if (decimal[i] === '0') zeroCount++;
+        else break;
+      }
+      if (zeroCount === 0) {
+        return `R$ ${price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      }
+      const superscriptDigits = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
+      const superscript = superscriptDigits[zeroCount];
+      const significantPart = decimal.slice(zeroCount, zeroCount + 2).padEnd(2, '0');
+      return `R$ 0,<sup>${superscript}</sup>${significantPart}`;
+    }
+
+    async function getCachedData(key, fetchFn, ttl = 600000) {
+      const cached = localStorage.getItem(key);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < ttl) return data;
+      }
+      const data = await fetchFn();
+      localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
+      return data;
+    }
+
+    async function fetchCmcData() {
+      try {
+        const res = await fetch(cmcApiUrl, { headers: { "X-CMC_PRO_API_KEY": cmcApiKey } });
+        if (!res.ok) throw new Error(`Erro na API CoinMarketCap: ${res.status} ${res.statusText}`);
+        const data = await res.json();
+        if (data.status.error_code !== 0) throw new Error(`Erro da API: ${data.status.error_message}`);
+        return data.data.map(coin => ({
+          id: `coinmarketcap-${coin.id}`,
+          name: coin.name,
+          symbol: coin.symbol,
+          slug: coin.slug,
+          cmc_rank: coin.cmc_rank || Infinity,
+          quote: coin.quote || { BRL: { price: 0, percent_change_24h: 0, market_cap: 0, market_cap_dominance: 0 } },
+          contract_address: null
+        }));
+      } catch (err) {
+        throw err;
+      }
+    }
+
+    async function fetchCmcGlobalData() {
+      try {
+        const res = await fetch(cmcGlobalUrl, { headers: { "X-CMC_PRO_API_KEY": cmcApiKey } });
+        if (!res.ok) throw new Error(`Erro na API CoinMarketCap Global: ${res.status} ${res.statusText}`);
+        const data = await res.json();
+        if (data.status.error_code !== 0) throw new Error(`Erro da API: ${data.status.error_message}`);
+        return data.data;
+      } catch (err) {
+        console.warn('Erro ao buscar dados globais:', err.message);
+        return { quote: { BRL: { total_market_cap: 0, total_volume_24h: 0, btc_dominance: 0 } } };
+      }
+    }
+
+    async function fetchCgData() {
+      let allCoins = [];
+      let page = 1;
+      try {
+        while (true) {
+          const res = await fetch(`${cgApiUrl}${page}`);
+          if (!res.ok) throw new Error(`Erro na API CoinGecko: ${res.status} ${res.statusText}`);
+          const data = await res.json();
+          if (data.length === 0) break;
+          allCoins = allCoins.concat(data.map(coin => ({
+            id: `coingecko-${coin.id}`,
+            name: coin.name,
+            symbol: coin.symbol.toUpperCase(),
+            slug: coin.id,
+            cmc_rank: coin.market_cap_rank || Infinity,
+            quote: { 
+              BRL: { 
+                price: coin.current_price || 0, 
+                percent_change_24h: coin.price_change_percentage_24h || 0, 
+                market_cap: coin.market_cap || 0, 
+                market_cap_dominance: coin.market_cap && coin.total_market_cap ? 
+                  (coin.market_cap / coin.total_market_cap) * 100 : 0 
+              } 
+            },
+            contract_address: null
+          })));
+          page++;
+        }
+        return allCoins;
+      } catch (err) {
+        throw err;
+      }
+    }
+
+    async function fetchContractAddresses(coins) {
+      const uncachedCoins = coins.filter(coin => !contractCache[coin.id]);
+      if (uncachedCoins.length === 0) return;
+      try {
+        const cmcIds = uncachedCoins.filter(coin => coin.id.startsWith('coinmarketcap')).map(coin => coin.id.split('-')[1]).join(',');
+        if (cmcIds) {
+          const res = await fetch(`https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?id=${cmcIds}`, { headers: { "X-CMC_PRO_API_KEY": cmcApiKey } });
+          if (res.ok) {
+            const data = await res.json();
+            Object.entries(data.data).forEach(([id, info]) => {
+              const contract = info.platform ? info.platform.token_address : null;
+              contractCache[`coinmarketcap-${id}`] = contract;
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao buscar contratos no CoinMarketCap:', err.message);
+      }
+      for (const coin of uncachedCoins.filter(c => c.id.startsWith('coingecko'))) {
+        if (contractCache[coin.id]) continue;
+        try {
+          const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coin.slug}`);
+          if (res.ok) {
+            const data = await res.json();
+            contractCache[coin.id] = data.contract_address || null;
+          }
+        } catch (err) {
+          console.warn(`Erro ao buscar contrato para ${coin.name}:`, err.message);
+          contractCache[coin.id] = null;
+        }
+      }
+      coins.forEach(coin => { coin.contract_address = contractCache[coin.id] || null; });
+    }
+
+    async function updateMarketStats() {
+      const globalData = await fetchCmcGlobalData();
+      const totalMarketCap = globalData.quote.BRL.total_market_cap ? 
+        `R$ ${globalData.quote.BRL.total_market_cap.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : 
+        'N/A';
+      const volume24h = globalData.quote.BRL.total_volume_24h ? 
+        `R$ ${globalData.quote.BRL.total_volume_24h.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : 
+        'N/A';
+      const btcDominance = globalData.quote.BRL.btc_dominance ? 
+        `${globalData.quote.BRL.btc_dominance.toFixed(2)}%` : 
+        'N/A';
+      document.getElementById('total-market-cap').textContent = totalMarketCap;
+      document.getElementById('volume-24h').textContent = volume24h;
+      document.getElementById('btc-dominance').textContent = btcDominance;
+    }
+
     async function fetchCryptoData() {
       try {
         cryptoData = await getCachedData('cryptoData', fetchCmcData);
-        console.log('cryptoData (CoinMarketCap):', cryptoData);
         await fetchContractAddresses(cryptoData.slice(0, 100));
+        await updateMarketStats();
         filterTable();
       } catch (err) {
         console.error('Erro ao carregar dados do CoinMarketCap:', err.message);
         try {
           cryptoData = await getCachedData('cryptoDataCg', fetchCgData);
-          console.log('cryptoData (CoinGecko):', cryptoData);
           await fetchContractAddresses(cryptoData.slice(0, 100));
+          await updateMarketStats();
           filterTable();
         } catch (cgErr) {
           console.error('Erro ao carregar dados do CoinGecko:', cgErr.message);
           document.querySelector("#crypto-table tbody").innerHTML = 
-            `<tr><td colspan="5" class="error-message">Erro ao carregar dados: ${cgErr.message}. Usando dados de teste.</td></tr>`;
+            `<tr><td colspan="5" class="error-message" data-i18n="error_loading">Erro ao carregar dados: ${cgErr.message}. Usando dados de teste.</td></tr>`;
           cryptoData = mockData;
           filteredData = mockData;
-          console.log('Usando mockData:', mockData);
           renderTable(getPageData());
+          changeLanguage(savedLang);
+          updateMarketStats();
         }
       }
-    }
-
-    async function fetchContractAddresses(coins) {
-      for (const coin of coins) {
-        if (coin.id.startsWith('coinmarketcap')) {
-          try {
-            const cmcId = coin.id.split('-')[1];
-            const res = await fetch(`https://crypto-pulse-backend.vercel.app/cmc/info?id=${cmcId}`);
-            if (!res.ok) throw new Error(`Erro ao buscar contrato: ${res.status}`);
-            const data = await res.json();
-            const contract = data.data[cmcId].platform?.token_address || null;
-            coin.contract_address = contract;
-          } catch (err) {
-            console.warn(`Não foi possível obter contrato para ${coin.name}:`, err.message);
-          }
-        }
-      }
-    }
-
-    function formatNumber(value, decimals = 2) {
-      if (value == null) return 'N/A';
-      return new Intl.NumberFormat('pt-BR', { 
-        minimumFractionDigits: decimals, 
-        maximumFractionDigits: decimals 
-      }).format(value);
-    }
-
-    function formatCurrency(value) {
-      if (value == null) return 'N/A';
-      return new Intl.NumberFormat('pt-BR', { 
-        style: 'currency', 
-        currency: 'BRL' 
-      }).format(value);
     }
 
     function getPageData() {
@@ -297,142 +1072,233 @@
       return filteredData.slice(start, end);
     }
 
-    function renderTable(data) {
-      const tbody = document.querySelector("#crypto-table tbody");
-      tbody.innerHTML = '';
-      data.forEach(coin => {
-        const tr = document.createElement('tr');
-        tr.setAttribute('data-id', coin.id);
-        tr.setAttribute('data-slug', coin.slug);
-        tr.innerHTML = `
-          <td>${coin.cmc_rank || 'N/A'}</td>
-          <td>${coin.name}</td>
-          <td>${coin.symbol}</td>
-          <td>${formatCurrency(coin.quote.BRL.price)}</td>
-          <td style="color: ${coin.quote.BRL.percent_change_24h >= 0 ? 'green' : 'red'}">
-            ${formatNumber(coin.quote.BRL.percent_change_24h)}%
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-      updatePagination();
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('crypto-table').style.display = 'table';
+    function updatePagination() {
+      const pagination = document.getElementById('pagination');
+      const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+      if (filteredData.length <= 10 && document.getElementById('search-input').value === '') {
+        pagination.classList.add('hidden');
+      } else {
+        pagination.classList.remove('hidden');
+        document.getElementById('prev-page').disabled = currentPage === 1;
+        document.getElementById('next-page').disabled = currentPage === totalPages;
+        document.getElementById('page-info').textContent = translations[savedLang].page.replace('{0}', `${currentPage} de ${totalPages || 1}`);
+      }
     }
 
-    function updatePagination() {
-      document.getElementById('prev-page').disabled = currentPage === 1;
-      document.getElementById('next-page').disabled = currentPage * itemsPerPage >= filteredData.length;
+    function changePage(delta) {
+      currentPage += delta;
+      if (currentPage < 1) currentPage = 1;
+      renderTable(getPageData());
+      updatePagination();
+    }
+
+    function renderTable(data) {
+      const tableBody = document.querySelector("#crypto-table tbody");
+      tableBody.innerHTML = "";
+      if (data.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="no-results" data-i18n="no_results">Nenhuma moeda encontrada.</td></tr>`;
+        changeLanguage(savedLang);
+        return;
+      }
+      requestAnimationFrame(() => {
+        data.forEach((coin) => {
+          const changeClass = (coin.quote.BRL.percent_change_24h || 0) >= 0 ? "positive" : "negative";
+          const price = formatPrice(coin.quote.BRL.price);
+          const marketCap = coin.quote.BRL.market_cap ? 
+            `R$ ${coin.quote.BRL.market_cap.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : 
+            'N/A';
+          const dominance = coin.quote.BRL.market_cap_dominance ? 
+            `${coin.quote.BRL.market_cap_dominance.toFixed(2)}%` : 
+            'N/A';
+          const iconUrl = coin.id.startsWith('coinmarketcap') ?
+            `https://s2.coinmarketcap.com/static/img/coins/64x64/${coin.id.split('-')[1]}.png` :
+            `https://assets.coingecko.com/coins/images/${coin.id.split('-')[1]}/thumb/${coin.slug}.png?154703${coin.id.split('-')[1]}.png`;
+          tableBody.innerHTML += `
+            <tr onclick="showModal('${coin.id}', '${coin.slug}')">
+              <td>#${coin.cmc_rank || 'N/A'}</td>
+              <td><img src="${iconUrl}" class="coin-icon" alt="${coin.name} icon" onerror="this.src='https://s2.coinmarketcap.com/static/img/coins/64x64/1.png'">${coin.name} (${coin.symbol})</td>
+              <td class="price">${price || 'R$ N/A'}<br><span class="${changeClass}">${(coin.quote.BRL.percent_change_24h || 0).toFixed(2)}%</span></td>
+              <td>${marketCap}</td>
+              <td>${dominance}</td>
+            </tr>
+          `;
+        });
+      });
     }
 
     function filterTable() {
-      const searchTerm = document.getElementById('search-input').value.toLowerCase();
-      filteredData = cryptoData.filter(coin => 
-        coin.name.toLowerCase().includes(searchTerm) || 
-        coin.symbol.toLowerCase().includes(searchTerm)
-      );
-      currentPage = 1;
-      sortData();
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(async () => {
+        const searchValue = document.getElementById("search-input").value.toLowerCase().trim();
+        currentPage = 1;
+        if (searchValue === "") {
+          filteredData = cryptoData.filter(coin => coin.cmc_rank <= 10).sort((a, b) => a.cmc_rank - b.cmc_rank);
+        } else {
+          filteredData = cryptoData.filter(coin => {
+            const isAddress = searchValue.startsWith('0x');
+            if (isAddress && coin.contract_address) {
+              return coin.contract_address.toLowerCase().includes(searchValue);
+            }
+            return (
+              coin.name.toLowerCase().includes(searchValue) ||
+              coin.symbol.toLowerCase().includes(searchValue)
+            );
+          });
+          await fetchContractAddresses(filteredData);
+        }
+        sortTable(sortColumn, false);
+      }, 300);
     }
 
-    function sortData() {
-      filteredData.sort((a, b) => {
-        let valueA = a[sortColumn] || a.quote?.BRL?.[sortColumn] || 0;
-        let valueB = b[sortColumn] || b.quote?.BRL?.[sortColumn] || 0;
-        if (sortColumn === 'name' || sortColumn === 'symbol') {
-          valueA = valueA.toLowerCase();
-          valueB = valueB.toLowerCase();
-          return sortDirection === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+    function sortTable(column, toggle = true) {
+      if (toggle) {
+        document.querySelectorAll('th').forEach(th => {
+          th.classList.remove('sorted', 'desc');
+        });
+        const th = document.querySelector(`th[onclick="sortTable('${column}')"]`);
+        if (sortColumn === column) {
+          sortDirection *= -1;
+          if (sortDirection === -1) th.classList.add('sorted', 'desc');
+          else th.classList.add('sorted');
+        } else {
+          sortColumn = column;
+          sortDirection = 1;
+          th.classList.add('sorted');
         }
-        return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
+      }
+      filteredData.sort((a, b) => {
+        let valueA, valueB;
+        switch (column) {
+          case 'cmc_rank': valueA = a.cmc_rank || Infinity; valueB = b.cmc_rank || Infinity; break;
+          case 'name': valueA = a.name.toLowerCase(); valueB = b.name.toLowerCase(); break;
+          case 'price': valueA = a.quote.BRL.price || 0; valueB = b.quote.BRL.price || 0; break;
+          case 'market_cap': valueA = a.quote.BRL.market_cap || 0; valueB = b.quote.BRL.market_cap || 0; break;
+          case 'market_cap_dominance': valueA = a.quote.BRL.market_cap_dominance || 0; valueB = b.quote.BRL.market_cap_dominance || 0; break;
+        }
+        if (typeof valueA === 'string') return sortDirection * valueA.localeCompare(valueB);
+        return sortDirection * (valueA - valueB);
       });
       renderTable(getPageData());
+      updatePagination();
     }
 
     async function showModal(coinId, coinSlug) {
       try {
         let coin = cryptoData.find(c => c.id === coinId);
+        if (!coin) throw new Error('Moeda não encontrada na lista de dados.');
+
         let coinInfo = {};
         if (coinId.startsWith('coinmarketcap')) {
           const cmcId = coinId.split('-')[1];
-          const res = await fetch(`https://crypto-pulse-backend.vercel.app/cmc/info?id=${cmcId}`);
-          if (!res.ok) throw new Error(`Erro ao buscar detalhes: ${res.status}`);
-          coinInfo = (await res.json()).data[cmcId];
+          try {
+            const res = await fetch(`https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?id=${cmcId}`, {
+              headers: { "X-CMC_PRO_API_KEY": cmcApiKey }
+            });
+            if (!res.ok) throw new Error(`Erro ao buscar detalhes: ${res.status} ${res.statusText}`);
+            const data = await res.json();
+            coinInfo = data.data[cmcId] || {};
+          } catch (err) {
+            console.warn('Erro ao buscar dados do CoinMarketCap:', err.message);
+            coinInfo = { urls: { website: [] } };
+          }
         } else {
-          const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coinSlug}`);
-          if (!res.ok) throw new Error(`Erro ao buscar detalhes: ${res.status}`);
-          coinInfo = await res.json();
+          try {
+            const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coinSlug}`);
+            if (!res.ok) throw new Error(`Erro ao buscar detalhes: ${res.status} ${res.statusText}`);
+            coinInfo = await res.json();
+          } catch (err) {
+            console.warn('Erro ao buscar dados do CoinGecko:', err.message);
+            coinInfo = { links: { homepage: [] } };
+          }
         }
-        document.getElementById('modal-title').textContent = coin.name;
-        document.getElementById('modal-description').textContent = coinInfo.description?.en?.substring(0, 200) + '...' || 'Descrição não disponível';
-        document.getElementById('modal-price').textContent = formatCurrency(coin.quote.BRL.price);
-        document.getElementById('modal-change').textContent = formatNumber(coin.quote.BRL.percent_change_24h) + '%';
-        document.getElementById('modal-market-cap').textContent = formatCurrency(coin.quote.BRL.market_cap);
-        document.getElementById('modal-dominance').textContent = formatNumber(coin.quote.BRL.market_cap_dominance) + '%' || 'N/A';
-        document.getElementById('modal-contract').textContent = coin.contract_address || 'N/A';
-        const website = coinInfo.urls?.website?.[0] || coinInfo.website || '#';
-        const websiteElement = document.getElementById('modal-website');
-        websiteElement.textContent = website !== '#' ? website : 'N/A';
-        websiteElement.href = website;
-        document.getElementById('crypto-modal').style.display = 'flex';
+
+        document.getElementById('modal-title').textContent = `${coin.name} (${coin.symbol})`;
+        document.getElementById('modal-price').innerHTML = `${translations[savedLang].price_label}${formatPrice(coin.quote.BRL.price) || 'R$ N/A'}`;
+        document.getElementById('modal-market-cap').textContent = `${translations[savedLang].market_cap_label}${coin.quote.BRL.market_cap ? 
+          `R$ ${coin.quote.BRL.market_cap.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : 
+          'N/A'}`;
+        document.getElementById('modal-dominance').textContent = `${translations[savedLang].dominance_label}${coin.quote.BRL.market_cap_dominance ? 
+          `${coin.quote.BRL.market_cap_dominance.toFixed(2)}%` : 
+          'N/A'}`;
+        document.getElementById('modal-contract').innerHTML = `${translations[savedLang].contract_label}${coin.contract_address ? 
+          `<a href="https://etherscan.io/address/${coin.contract_address}" target="_blank">${coin.contract_address}</a>` : 
+          translations[savedLang].not_available || 'Não disponível'}`;
+        document.getElementById('modal-website').innerHTML = `${translations[savedLang].website_label}${coinInfo.urls?.website?.[0] || coinInfo.links?.homepage?.[0] ? 
+          `<a href="${coinInfo.urls.website?.[0] || coinInfo.links.homepage[0]}" target="_blank">${coinInfo.urls.website?.[0] || coinInfo.links.homepage[0]}</a>` : 
+          translations[savedLang].not_available || 'Não disponível'}`;
+
+        let historicalData;
+        try {
+          const cgRes = await fetch(`https://api.coingecko.com/api/v3/coins/${coinSlug}/market_chart?vs_currency=brl&days=7`);
+          if (!cgRes.ok) throw new Error(`Erro ao buscar gráfico: ${cgRes.status} ${cgRes.statusText}`);
+          historicalData = await cgRes.json();
+        } catch (err) {
+          console.error('Erro ao carregar dados históricos:', err.message);
+          historicalData = mockHistoricalData;
+          document.getElementById('modal-chart-error').style.display = 'block';
+          document.getElementById('modal-chart-error').textContent = translations[savedLang].chart_error;
+        }
+
+        const prices = historicalData.prices;
+        const firstPrice = prices[0][1];
+        const lastPrice = prices[prices.length - 1][1];
+        const isUp = lastPrice >= firstPrice;
+        const lineColor = isUp ? '#22c55e' : '#ef4444';
+        const fillColor = isUp ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+        const ctx = document.getElementById('modal-chart').getContext('2d');
+        if (priceChart) priceChart.destroy();
+        priceChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: prices.map(p => new Date(p[0]).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })),
+            datasets: [{
+              label: translations[savedLang].chart_label || 'Preço (BRL) - Últimos 7 Dias',
+              data: prices.map(p => p[1]),
+              borderColor: lineColor,
+              backgroundColor: fillColor,
+              fill: true,
+              tension: 0.4,
+              pointRadius: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { grid: { display: false }, ticks: { color: '#9ca3af' } },
+              y: { grid: { color: '#2d2d31' }, ticks: { color: '#9ca3af', callback: value => `R$ ${value.toLocaleString('pt-BR')}` } }
+            },
+            plugins: {
+              legend: { display: true, labels: { color: 'var(--text-color)' } },
+              tooltip: {
+                backgroundColor: 'var(--card-bg)',
+                titleColor: 'var(--text-color)',
+                bodyColor: 'var(--text-color)',
+                callbacks: { label: context => `R$ ${context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` }
+              }
+            }
+          }
+        });
+        document.getElementById('modal-chart-error').style.display = 'none';
+        document.getElementById('modal').style.display = 'flex';
       } catch (err) {
         console.error('Erro ao carregar detalhes da moeda:', err.message);
-        alert(`Erro ao carregar detalhes da moeda: ${err.message}`);
+        alert(translations[savedLang].modal_error || `Erro ao carregar detalhes da moeda: ${err.message}`);
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      fetchCryptoData();
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+      if (priceChart) priceChart.destroy();
+      document.getElementById('modal-chart-error').style.display = 'none';
+    }
 
-      document.getElementById('search-button').addEventListener('click', filterTable);
-      document.getElementById('search-input').addEventListener('input', filterTable);
-
-      document.getElementById('prev-page').addEventListener('click', () => {
-        if (currentPage > 1) {
-          currentPage--;
-          renderTable(getPageData());
-        }
-      });
-
-      document.getElementById('next-page').addEventListener('click', () => {
-        if (currentPage * itemsPerPage < filteredData.length) {
-          currentPage++;
-          renderTable(getPageData());
-        }
-      });
-
-      document.querySelectorAll('th[data-sort]').forEach(th => {
-        th.addEventListener('click', () => {
-          const column = th.getAttribute('data-sort');
-          if (sortColumn === column) {
-            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-          } else {
-            sortColumn = column;
-            sortDirection = 'asc';
-          }
-          sortData();
-        });
-      });
-
-      document.querySelector('#crypto-table tbody').addEventListener('click', (e) => {
-        const tr = e.target.closest('tr');
-        if (tr) {
-          const coinId = tr.getAttribute('data-id');
-          const coinSlug = tr.getAttribute('data-slug');
-          showModal(coinId, coinSlug);
-        }
-      });
-
-      document.querySelector('.close').addEventListener('click', () => {
-        document.getElementById('crypto-modal').style.display = 'none';
-      });
-
-      window.addEventListener('click', (e) => {
-        if (e.target === document.getElementById('crypto-modal')) {
-          document.getElementById('crypto-modal').style.display = 'none';
-        }
-      });
+    document.getElementById('modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('modal')) closeModal();
     });
+
+    fetchCryptoData();
+    setInterval(fetchCryptoData, 600000);
   </script>
 </body>
 </html>
