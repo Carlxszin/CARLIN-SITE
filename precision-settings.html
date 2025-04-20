@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="precision_settings_title">CryptoPulse - Configurações de Precisão</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.rel='stylesheet'">
+  <style>
+    :root {
+      --bg-color: #0e0e10;
+      --text-color: #f0f0f0;
+      --card-bg: #1f1f23;
+      --card-hover: #27272a;
+      --primary-color: #3b82f6;
+      --accent-color: #93c5fd;
+      --positive-color: #22c55e;
+      --negative-color: #ef4444;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      --gradient: linear-gradient(135deg, #6b46c1, #2b6cb0, #0987a0);
+    }
+    [data-theme="light"] {
+      --bg-color: #f3f4f6;
+      --text-color: #1f2937;
+      --card-bg: #ffffff;
+      --card-hover: #f9fafb;
+      --primary-color: #2563eb;
+      --accent-color: #60a5fa;
+      --positive-color: #16a34a;
+      --negative-color: #dc2626;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --gradient: linear-gradient(135deg, #93c5fd, #60a5fa, #3b82f6);
+    }
+    [data-theme="green"] {
+      --primary-color: #16a34a;
+      --accent-color: #4ade80;
+      --gradient: linear-gradient(135deg, #16a34a, #4ade80, #22d3ee);
+    }
+    [data-theme="purple"] {
+      --primary-color: #6b46c1;
+      --accent-color: #a78bfa;
+      --gradient: linear-gradient(135deg, #6b46c1, #a78bfa, #7c3aed);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to bottom, var(--bg-color), rgba(24, 24, 27, 0.8));
+      color: var(--text-color);
+      line-height: 1.6;
+      transition: background 0.3s ease, color 0.3s ease;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--gradient);
+      padding: 8px 16px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    header h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #ffffff, #93c5fd, #ffffff);
+      background-size: 200% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: 1px;
+      animation: gradientShift 4s ease-in-out infinite;
+    }
+
+    .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .menu-icon {
+      font-size: 1.3rem;
+      cursor: pointer;
+      color: #ffffff;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 8px;
+      border-radius: 8px;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .menu-icon:hover { background: rgba(0, 0, 0, 0.5); transform: scale(1.1); }
+    .menu-icon svg { width: 24px; height: 24px; }
+
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 56px;
+      right: 16px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      min-width: 240px;
+      padding: 12px 0;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      role="menu";
+      aria-expanded="false";
+    }
+    .dropdown.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+      aria-expanded="true";
+    }
+    .dropdown .category {
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      color: #9ca3af;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dropdown .category svg { width: 16px; height: 16px; fill: #9ca3af; }
+    .dropdown a {
+      display: block;
+      padding: 8px 16px;
+      color: var(--text-color);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .dropdown a:hover { background: var(--card-hover); color: var(--accent-color); }
+
+    .language-selector, .theme-toggle {
+      display: flex;
+      align-items: center;
+      color: #ffffff;
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      transition: background 0.3s ease;
+    }
+    .language-selector select {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 0.85rem;
+      padding: 4px;
+      cursor: pointer;
+      appearance: none;
+    }
+    .language-selector svg, .theme-toggle svg { width: 18px; height: 18px; margin-right: 6px; }
+
+    .settings-section {
+      max-width: 720px;
+      margin: 24px auto;
+      padding: 0 12px;
+    }
+    .settings-section h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--accent-color);
+      margin-bottom: 20px;
+    }
+    .settings-card {
+      background: var(--card-bg);
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+    .settings-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-color);
+      margin-bottom: 12px;
+    }
+    .settings-card label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--text-color);
+      margin-bottom: 8px;
+    }
+    .settings-card input, .settings-card select {
+      padding: 8px;
+      background: var(--card-hover);
+      border: none;
+      border-radius: 6px;
+      color: var(--text-color);
+      font-size: 0.9rem;
+      width: 100%;
+      max-width: 300px;
+    }
+    .settings-card input[type="checkbox"] { accent-color: var(--primary-color); }
+    .settings-card button {
+      padding: 8px 16px;
+      background: var(--primary-color);
+      border: none;
+      border-radius: 6px;
+      color: #ffffff;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .settings-card button:hover { background: #2563eb; transform: scale(1.05); }
+    .font-controls button {
+      padding: 6px 12px;
+      margin-right: 8px;
+      font-size: 0.9rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 16px;
+      font-size: 0.8rem;
+      color: #9ca3af;
+      border-top: 1px solid #2d2d31;
+      margin-top: 24px;
+      background: var(--card-bg);
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @media (max-width: 768px) {
+      header { padding: 6px 12px; }
+      header h1 { font-size: 1.3rem; }
+      .settings-section { padding: 0 10px; }
+      .settings-card { padding: 12px; }
+      .settings-card input, .settings-card select { max-width: 100%; }
+    }
+    @media (max-width: 480px) {
+      header { padding: 4px 8px; }
+      header h1 { font-size: 1.1rem; }
+      .settings-card h3 { font-size: 0.9rem; }
+      .settings-card label { font-size: 0.85rem; }
+    }
+    @media (min-width: 1200px) {
+      .settings-section { max-width: 960px; }
+      .settings-card { padding: 20px; }
+      .settings-card h3 { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 data-i18n="title">CryptoPulse</h1>
+    <div class="controls">
+      <span class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <span data-i18n="theme">Tema Escuro</span>
+      </span>
+      <span class="language-selector" aria-label="Selecionar idioma">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+        <select onchange="changeLanguage(this.value)">
+          <option value="pt">Português</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+        </select>
+      </span>
+      <span class="menu-icon" onclick="toggleDropdown()" aria-label="Abrir menu">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </span>
+    </div>
+    <div class="dropdown" id="crypto-links" role="menu" aria-expanded="false">
+      <div class="category" data-i18n="category_tools">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14.7 6.3a1 1 0 0 0-1.4 0l-4 4a1 1 0 0 0 0 1.4l4 4a1 1 0 0 0 1.4 0l4-4a1 1 0 0 0 0-1.4l-4-4zM12 20a8 8 0 1 1 0-16 8 8 0 0 1 0 16z"/></svg>
+        Ferramentas
+      </div>
+      <a href="portfolio.html" data-i18n="portfolio">Portfolio Pessoal</a>
+      <a href="tools.html" data-i18n="trackers">Rastreador & Exploradores</a>
+      <a href="precision-settings.html" data-i18n="precision_settings">Configurações de Precisão</a>
+      <div class="category" data-i18n="category_data">Dados</div>
+      <!-- ... demais itens -->
+    </div>
+  </header>
+  <div class="settings-section">
+    <h2 data-i18n="precision_settings_title">Configurações de Precisão</h2>
+    <div class="settings-card">
+      <h3 data-i18n="number_format">Formatação de Números</h3>
+      <label>
+        <input type="checkbox" id="show-decimals" onchange="saveSettings()">
+        <span data-i18n="show_decimals">Mostrar casas decimais completas</span>
+      </label>
+      <label>
+        <span data-i18n="decimal_places">Casas decimais para preços:</span>
+        <input type="number" id="decimal-places" min="0" max="8" value="2" onchange="saveSettings()">
+      </label>
+    </div>
+    <div class="settings-card">
+      <h3 data-i18n="display_settings">Configurações de Exibição</h3>
+      <label>
+        <span data-i18n="theme_label">Tema:</span>
+        <select id="theme-select" onchange="changeTheme(this.value)">
+          <option value="default" data-i18n="theme_default">Padrão</option>
+          <option value="green" data-i18n="theme_green">Verde</option>
+          <option value="purple" data-i18n="theme_purple">Roxo</option>
+        </select>
+      </label>
+      <div class="font-controls">
+        <button onclick="adjustFontSize(1)" aria-label="Aumentar tamanho da fonte" data-i18n="font_increase">A+</button>
+        <button onclick="adjustFontSize(-1)" aria-label="Diminuir tamanho da fonte" data-i18n="font_decrease">A-</button>
+      </div>
+    </div>
+    <div class="settings-card">
+      <h3 data-i18n="notifications">Notificações</h3>
+      <label>
+        <input type="checkbox" id="price-alerts" onchange="saveSettings()">
+        <span data-i18n="price_alerts">Ativar alertas de preço</span>
+      </label>
+      <label>
+        <span data-i18n="alert_threshold">Limiar de variação (%):</span>
+        <input type="number" id="alert-threshold" min="0" max="100" value="5" onchange="saveSettings()">
+      </label>
+    </div>
+    <div class="settings-card">
+      <h3 data-i18n="data_preferences">Preferências de Dados</h3>
+      <label>
+        <input type="checkbox" id="show-stablecoins" checked onchange="saveSettings()">
+        <span data-i18n="show_stablecoins">Exibir stablecoins</span>
+      </label>
+      <label>
+        <input type="checkbox" id="show-meme-coins" checked onchange="saveSettings()">
+        <span data-i18n="show_meme_coins">Exibir meme coins</span>
+      </label>
+    </div>
+    <button onclick="resetSettings()" data-i18n="reset_settings">Redefinir Configurações</button>
+  </div>
+  <footer>
+    <span data-i18n="footer">© 2025 CryptoPulse | Dados: CoinMarketCap, CoinGecko</span>
+  </footer>
+  <script type="module">
+    import { translations, changeLanguage } from './i18n.js';
+
+    function toggleTheme() {
+      const currentTheme = document.body.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      const lang = localStorage.getItem('language') || 'pt';
+      const themeText = newTheme === 'dark' ? translations[lang].theme : translations[lang].theme.replace('Escuro', 'Claro').replace('Dark', 'Light').replace('Oscuro', 'Claro').replace('Sombre', 'Clair').replace('Dunkles', 'Helles');
+      document.querySelector('.theme-toggle span').textContent = themeText;
+    }
+
+    function changeTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+      document.getElementById('theme-select').value = theme;
+    }
+
+    function adjustFontSize(delta) {
+      const root = document.documentElement;
+      const currentSize = parseFloat(getComputedStyle(root).fontSize);
+      const newSize = Math.max(12, Math.min(18, currentSize + delta));
+      root.style.fontSize = `${newSize}px`;
+      localStorage.setItem('fontSize', newSize);
+    }
+
+    function toggleDropdown() {
+      const dropdown = document.getElementById('crypto-links');
+      const isActive = dropdown.classList.toggle('active');
+      dropdown.setAttribute('aria-expanded', isActive);
+    }
+
+    function saveSettings() {
+      const settings = {
+        showDecimals: document.getElementById('show-decimals').checked,
+        decimalPlaces: parseInt(document.getElementById('decimal-places').value),
+        theme: document.getElementById('theme-select').value,
+        priceAlerts: document.getElementById('price-alerts').checked,
+        alertThreshold: parseInt(document.getElementById('alert-threshold').value),
+        showStablecoins: document.getElementById('show-stablecoins').checked,
+        showMemeCoins: document.getElementById('show-meme-coins').checked
+      };
+      localStorage.setItem('precisionSettings', JSON.stringify(settings));
+    }
+
+    function loadSettings() {
+      const settings = JSON.parse(localStorage.getItem('precisionSettings')) || {
+        showDecimals: false,
+        decimalPlaces: 2,
+        theme: 'default',
+        priceAlerts: false,
+        alertThreshold: 5,
+        showStablecoins: true,
+        showMemeCoins: true
+      };
+      document.getElementById('show-decimals').checked = settings.showDecimals;
+      document.getElementById('decimal-places').value = settings.decimalPlaces;
+      document.getElementById('theme-select').value = settings.theme;
+      document.getElementById('price-alerts').checked = settings.priceAlerts;
+      document.getElementById('alert-threshold').value = settings.alertThreshold;
+      document.getElementById('show-stablecoins').checked = settings.showStablecoins;
+      document.getElementById('show-meme-coins').checked = settings.showMemeCoins;
+      changeTheme(settings.theme);
+    }
+
+    function resetSettings() {
+      localStorage.removeItem('precisionSettings');
+      loadSettings();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedLang = localStorage.getItem('language') || 'pt';
+      changeLanguage(savedLang);
+      document.querySelector('select').value = savedLang;
+      loadSettings();
+    });
+
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('crypto-links');
+      const icon = document.querySelector('.menu-icon');
+      if (!dropdown.contains(e.target) && !icon.contains(e.target)) {
+        dropdown.classList.remove('active');
+        dropdown.setAttribute('aria-expanded', 'false');
+      }
+    });
+  </script>
+</body>
+</html>
